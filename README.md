@@ -1,5 +1,5 @@
 
-HOPFIELD NETWORK
+**HOPFIELD NETWORK**
 
 A Hopfield Network is a type of recurrent artificial neural network that is designed to store and recall patterns. It can be used as an associative memory, which is capable of correcting corrupted or noisy input patterns by recalling the closest stored pattern. The network is characterized by its symmetric weight matrix, and it converges to a stable state after a number of iterations.
 
@@ -44,7 +44,7 @@ SUMMARY
 In summary, the Hopfield Network implemented in the provided code is a simple and effective model for storing and recalling patterns. The network is capable of correcting corrupted or noisy input patterns by recalling the closest stored pattern. The code demonstrates the process of training the network, generating noisy inputs, and recalling stored patterns using the trained network.
 
 
-RESTRICTED BOLTZMANN MACHINE
+**RESTRICTED BOLTZMANN MACHINE**
 
 A Restricted Boltzmann Machine (RBM) is a type of generative stochastic artificial neural network, consisting of two layers: a visible layer and a hidden layer. The connections between the nodes are undirected, and there are no connections within the same layer. RBMs can learn a probability distribution over their input patterns and are widely used for feature learning, dimensionality reduction, and pattern recognition tasks.
 
