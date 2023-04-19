@@ -1,6 +1,7 @@
 
 import numpy as np
 import random
+import itertools
 import matplotlib.pyplot as plt
 
 # Import exemplars representing numerals 0 to 7 in a 100-element format (10x10 rasterized array).
@@ -20,17 +21,41 @@ class RestrictedBoltzmannMachine:
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
 
-    # Train the RBM using Hinton's contrastive divergence method
-    def train(self, patterns, learning_rate=0.01, n_epochs=10, batch_size=1, k=1):
+    # Update the train function to include early stopping and adaptive learning rate (Adam)
+    def train(self, patterns, learning_rate=0.01, n_epochs=10, batch_size=1, k=1, validation_split=0.1,
+              early_stopping_rounds=5, beta1=0.9, beta2=0.999, epsilon=1e-8, gibbs=100, noise_input=0.1):
+        
+        # Split the dataset into training and validation sets
+        n_validation = int(len(patterns) * validation_split)
+        training_patterns = patterns[:-n_validation]
+        validation_patterns = patterns[-n_validation:]
+
+        best_weights = self.weights.copy()
+        best_visible_bias = self.visible_bias.copy()
+        best_hidden_bias = self.hidden_bias.copy()
+        best_epoch = 0
+        best_performance = 0
+        stopping_counter = 0
+
+        m_weights = np.zeros_like(self.weights)
+        v_weights = np.zeros_like(self.weights)
+        m_visible_bias = np.zeros_like(self.visible_bias)
+        v_visible_bias = np.zeros_like(self.visible_bias)
+        m_hidden_bias = np.zeros_like(self.hidden_bias)
+        v_hidden_bias = np.zeros_like(self.hidden_bias)
+
         for epoch in range(n_epochs):
-            np.random.shuffle(patterns)
-            for batch in range(0, len(patterns), batch_size):
-                data = patterns[batch:batch + batch_size]
+            np.random.shuffle(training_patterns)
+            for batch in range(0, len(training_patterns), batch_size):
+                data = training_patterns[batch:batch + batch_size]
+
+                # Positive phase: compute hidden probabilities given input data (visible units)
                 pos_hidden_activations = np.dot(data, self.weights) + self.hidden_bias
                 pos_hidden_probs = self.sigmoid(pos_hidden_activations)
                 pos_hidden_states = pos_hidden_probs > np.random.rand(*pos_hidden_probs.shape)
                 pos_associations = np.dot(np.transpose(data), pos_hidden_probs)
 
+                # Negative phase: perform k-step Gibbs sampling to generate visible units from hidden units
                 neg_visible_activations = np.dot(pos_hidden_states, np.transpose(self.weights)) + self.visible_bias
                 neg_visible_probs = self.sigmoid(neg_visible_activations)
                 neg_visible_probs[:, -1] = 1  # Fix the bias unit
@@ -38,9 +63,52 @@ class RestrictedBoltzmannMachine:
                 neg_hidden_probs = self.sigmoid(neg_hidden_activations)
                 neg_associations = np.dot(np.transpose(neg_visible_probs), neg_hidden_probs)
 
-                self.weights += learning_rate * (pos_associations - neg_associations) / batch_size
-                self.visible_bias += learning_rate * np.mean(data - neg_visible_probs, axis=0)
-                self.hidden_bias += learning_rate * np.mean(pos_hidden_probs - neg_hidden_probs, axis=0)
+                # Update the weights and biases using Adam
+                m_weights = beta1 * m_weights + (1 - beta1) * (pos_associations - neg_associations) / batch_size
+                v_weights = beta2 * v_weights + (1 - beta2) * ((pos_associations - neg_associations) / batch_size)**2
+                m_hat_weights = m_weights / (1 - beta1**(epoch + 1))
+                v_hat_weights = v_weights / (1 - beta2**(epoch + 1))
+                self.weights += learning_rate * m_hat_weights / (np.sqrt(v_hat_weights) + epsilon)
+
+                m_visible_bias = beta1 * m_visible_bias + (1 - beta1) * np.mean(data - neg_visible_probs, axis=0)
+                v_visible_bias = beta2 * v_visible_bias + (1 - beta2) * np.mean(data - neg_visible_probs, axis=0)**2
+                m_hat_visible_bias = m_visible_bias / (1 - beta1**(epoch + 1))
+                v_hat_visible_bias = v_visible_bias / (1 - beta2**(epoch + 1))
+                self.visible_bias += learning_rate * m_hat_visible_bias / (np.sqrt(v_hat_visible_bias) + epsilon)
+
+                m_hidden_bias = beta1 * m_hidden_bias + (1 - beta1) * np.mean(pos_hidden_probs - neg_hidden_probs, axis=0)
+                v_hidden_bias = beta2 * v_hidden_bias + (1 - beta2) * np.mean(pos_hidden_probs - neg_hidden_probs, axis=0)**2
+                m_hat_hidden_bias = m_hidden_bias / (1 - beta1**(epoch + 1))
+                v_hat_hidden_bias = v_hidden_bias / (1 - beta2**(epoch + 1))
+                self.hidden_bias += learning_rate * m_hat_hidden_bias / (np.sqrt(v_hat_hidden_bias) + epsilon)
+
+            # Evaluate the model on the validation set and implement early stopping
+            total_similarity = 0
+            for exemplar in validation_patterns:
+                noisy_exemplars = create_noisy_input(exemplar, noise_level=noise_input)
+                recalled_pattern = self.recall(noisy_exemplars, n_gibbs=gibbs)
+                similarity = jaccard_similarity(recalled_pattern, exemplar)
+                total_similarity += similarity
+
+            performance = total_similarity / len(validation_patterns)
+            print(f"Epoch: {epoch + 1}, Validation performance: {performance:.2f}")
+
+            if performance > best_performance:
+                best_weights = self.weights.copy()
+                best_visible_bias = self.visible_bias.copy()
+                best_hidden_bias = self.hidden_bias.copy()
+                best_epoch = epoch
+                best_performance = performance
+                stopping_counter = 0
+            else:
+                stopping_counter += 1
+
+            if stopping_counter >= early_stopping_rounds:
+                print(f"Early stopping at epoch {epoch + 1}. Best performance at epoch {best_epoch + 1}: {best_performance:.2f}")
+                self.weights = best_weights
+                self.visible_bias = best_visible_bias
+                self.hidden_bias = best_hidden_bias
+                break
 
     # Recall the original pattern given a noisy input using Gibbs sampling
     def recall(self, pattern, n_gibbs=100):
@@ -57,7 +125,7 @@ class RestrictedBoltzmannMachine:
 
 # Function to create a noisy version of the input pattern
 def create_noisy_input(pattern, noise_level=0.1):
-    noisy_exemplars = pattern.copy()
+    noisy_exemplars = np.copy(pattern)
     for idx in range(len(noisy_exemplars)):
         if np.random.random() < noise_level:
             noisy_exemplars[idx] = 1 - noisy_exemplars[idx]
@@ -69,80 +137,68 @@ def jaccard_similarity(a, b):
     union = np.sum(np.logical_or(a == 1, b == 1))
     return intersection / union if union > 0 else 0
 
-def display_pattern(pattern):
-    plt.imshow(pattern.reshape(10, 10), cmap='gray')
+def display_patterns(original, noisy, reconstructed):
+    fig, axes = plt.subplots(1, 3, figsize=(10, 5))
+    axes[0].imshow(original.reshape(10, 10), cmap='gray')
+    axes[0].set_title("Original")
+    axes[0].axis('off')
+    axes[1].imshow(noisy.reshape(10, 10), cmap='gray')
+    axes[1].set_title("Noisy")
+    axes[1].axis('off')
+    axes[2].imshow(reconstructed.reshape(10, 10), cmap='gray')
+    axes[2].set_title("Reconstructed")
+    axes[2].axis('off')
     plt.show()
-
-def train_with_best_k():
-    rbm = RestrictedBoltzmannMachine(100, 100)
-    rbm.train([exemplar for exemplar, _ in exemplars_with_labels], k=best_k)
-    
-    for exemplar, label in exemplars_with_labels:
-        for i in range(num_test_sequences):
-            noisy_exemplars = create_noisy_input(exemplar, noise_level=noise_input)
-            recalled_pattern = rbm.recall(noisy_exemplars, n_gibbs=num_gibbs)
-
-            # Display the original, noisy, and recalled patterns
-            print(f"Sequence {i+1} with {num_gibbs} Gibbs sampling cycles")
-
-            print("Original pattern:")
-            display_pattern(exemplar)
-
-            print("Noisy input:")
-            display_pattern(noisy_exemplars)
-
-            print("Recalled pattern:")
-            display_pattern(recalled_pattern)
-            print("-" * 20)
 
 # Add labels to the exemplars
 exemplars_with_labels = list(zip(exemplars, range(len(exemplars))))
 
-# Train the RBM with different values of k
-k_values = range(1, 36)
-best_k = None
+# Test the RBM with different numbers of Gibbs cycles
+gibbs_values = range(1, 501, 20)
+best_gibbs = None
 best_performance = 0
-
-correct_reconstructions = []
-correct_reconstructions_count = 0
-total_reconstructions_count = 0
 
 num_test_sequences = 2
 similarity_threshold = 0.15
-num_gibbs = 20
 noise_input = 0.1
+correct_reconstructions = []
 
-for k in k_values:
+for gibbs in gibbs_values:
     rbm = RestrictedBoltzmannMachine(100, 100)
-    rbm.train([exemplar for exemplar, _ in exemplars_with_labels], learning_rate=0.001, n_epochs=60, batch_size=1, k=k)
+    rbm.train([exemplar for exemplar, _ in exemplars_with_labels], learning_rate=0.001, n_epochs=20, batch_size=4, k=1,
+            validation_split=0.1, early_stopping_rounds=5, beta1=0.9, beta2=0.999, epsilon=1e-8)
+
+    correct_reconstructions_count = 0  # Reset the counters at the beginning of each iteration
+    total_reconstructions_count = 0
 
     for exemplar, label in exemplars_with_labels:
         for i in range(num_test_sequences):
             noisy_exemplars = create_noisy_input(exemplar, noise_level=noise_input)
-            recalled_pattern = rbm.recall(noisy_exemplars, n_gibbs=num_gibbs)
+            recalled_pattern = rbm.recall(noisy_exemplars, n_gibbs=gibbs)
             total_reconstructions_count += 1
             similarity = jaccard_similarity(recalled_pattern, exemplar)
+            
+            # Display the patterns if the reconstruction is successful
             if similarity >= similarity_threshold:
                 correct_reconstructions_count += 1
+                # print(f"Exemplar: {label}, Test sequence: {i + 1}, Similarity: {similarity:.2f}")
+                # display_patterns(exemplar, noisy_exemplars, recalled_pattern)
 
     performance = correct_reconstructions_count / total_reconstructions_count
     correct_reconstructions.append(performance)
     
-    print(f"k: {k}, Frequency of correct reconstructions: {performance:.2f}")
+    print(f"Gibbs cycles: {gibbs}, Frequency of correct reconstructions: {performance:.2f}")
 
     if performance > best_performance:
         best_performance = performance
-        best_k = k
+        best_gibbs = gibbs
 
-print(f"Optimal k: {best_k}, Best performance: {best_performance:.2f}")
+print(f"Optimal number of Gibbs cycles: {best_gibbs}, Best performance: {best_performance:.2f}")
 
-# Plot the relationship between k and the frequency of correct reconstructions
-plt.plot(k_values, correct_reconstructions, marker='o')
-plt.xlabel('Number of Gibbs sampling cycles (k)')
+# Plot the relationship between the number of Gibbs cycles and the frequency of correct reconstructions
+plt.plot(gibbs_values, correct_reconstructions, marker='o')
+plt.xlabel('Number of Gibbs sampling cycles')
 plt.ylabel('Frequency of correct reconstructions')
-plt.title('Performance of the RBM with varying k')
+plt.title('Measuring the Performance of the RBM')
 plt.grid()
 plt.show()
-
-# Train the RBM with the best k value
-train_with_best_k()

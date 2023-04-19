@@ -37,7 +37,6 @@ def create_noisy_inputs(pattern, noise_levels):
         noisy_patterns.append(noisy_pattern)
     return noisy_patterns
     
-# Displays pattern in a 10x10 rasterized array with "#" representing "on" pixels and a space representing "off" pixels
 def display_pattern(pattern):
     reshaped_pattern = pattern.reshape(10, 10)
     plt.imshow(reshaped_pattern, cmap='gray')
@@ -49,7 +48,7 @@ network.train(exemplars)
 
 # Test the network with noisy inputs
 num_test_sequences = 2
-noise_levels = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08]
+noise_levels = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
 for i, exemplar in enumerate(exemplars):
     for j in range(num_test_sequences):
