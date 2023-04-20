@@ -22,7 +22,7 @@ class RestrictedBoltzmannMachine:
         return 1 / (1 + np.exp(-x))
 
     # Update the train function to include early stopping and adaptive learning rate (Adam)
-    def train(self, patterns, learning_rate=0.01, n_epochs=10, batch_size=1, k=1, validation_split=0.1,
+    def train(self, patterns, learning_rate=0.001, n_epochs=20, batch_size=4, k=1, validation_split=0.1,
               early_stopping_rounds=5, beta1=0.9, beta2=0.999, epsilon=1e-8, gibbs=100, noise_input=0.1):
         
         # Split the dataset into training and validation sets
@@ -87,11 +87,11 @@ class RestrictedBoltzmannMachine:
             for exemplar in validation_patterns:
                 noisy_exemplars = create_noisy_input(exemplar, noise_level=noise_input)
                 recalled_pattern = self.recall(noisy_exemplars, n_gibbs=gibbs)
-                similarity = jaccard_similarity(recalled_pattern, exemplar)
-                total_similarity += similarity
+                distance = hamming_distance(recalled_pattern, exemplar)
+                total_similarity += distance
 
             performance = total_similarity / len(validation_patterns)
-            print(f"Epoch: {epoch + 1}, Validation performance: {performance:.2f}")
+            print(f"Epoch: {epoch + 1}, Validation accuracy: {performance / 100:.2f}")
 
             if performance > best_performance:
                 best_weights = self.weights.copy()
@@ -104,7 +104,7 @@ class RestrictedBoltzmannMachine:
                 stopping_counter += 1
 
             if stopping_counter >= early_stopping_rounds:
-                print(f"Early stopping at epoch {epoch + 1}. Best performance at epoch {best_epoch + 1}: {best_performance:.2f}")
+                print(f"Early stopping at epoch {epoch + 1}. Best performance at epoch {best_epoch + 1}: {best_performance / 100:.2f}")
                 self.weights = best_weights
                 self.visible_bias = best_visible_bias
                 self.hidden_bias = best_hidden_bias
@@ -131,11 +131,20 @@ def create_noisy_input(pattern, noise_level=0.1):
             noisy_exemplars[idx] = 1 - noisy_exemplars[idx]
     return noisy_exemplars
 
-# Function to compute the Jaccard similarity between two binary arrays
-def jaccard_similarity(a, b):
-    intersection = np.sum(np.logical_and(a == 1, b == 1))
-    union = np.sum(np.logical_or(a == 1, b == 1))
-    return intersection / union if union > 0 else 0
+# Function to compute the Hamming distance between two binary arrays
+def hamming_distance(a, b):
+    return np.sum(a != b)
+
+def maxnet(input_values, epsilon=0.01, max_iterations=1000):
+    values = input_values.copy()
+    for _ in range(max_iterations):
+        values = values - epsilon * (np.sum(values) - values)
+        values[values < 0] = 0
+
+        if np.count_nonzero(values) == 1:
+            break
+
+    return np.argmax(values)
 
 def display_patterns(original, noisy, reconstructed):
     fig, axes = plt.subplots(1, 3, figsize=(10, 5))
@@ -153,47 +162,53 @@ def display_patterns(original, noisy, reconstructed):
 # Add labels to the exemplars
 exemplars_with_labels = list(zip(exemplars, range(len(exemplars))))
 
-# Test the RBM with different numbers of Gibbs cycles
-gibbs_values = range(1, 501, 20)
-best_gibbs = None
-best_performance = 0
-
+# Initialize search parameters
 num_test_sequences = 2
-similarity_threshold = 0.15
-noise_input = 0.1
+hamming_threshold = 80  # Updated threshold for Hamming distance
 correct_reconstructions = []
+noise = 0.1
+gibbs_values = range(1, 201, 20)
+
+best_performance = 0
+best_threshold = None
+best_noise_level = None
+best_gibbs = None
 
 for gibbs in gibbs_values:
     rbm = RestrictedBoltzmannMachine(100, 100)
-    rbm.train([exemplar for exemplar, _ in exemplars_with_labels], learning_rate=0.001, n_epochs=20, batch_size=4, k=1,
-            validation_split=0.1, early_stopping_rounds=5, beta1=0.9, beta2=0.999, epsilon=1e-8)
+    rbm.train([exemplar for exemplar, _ in exemplars_with_labels], gibbs=gibbs)
 
-    correct_reconstructions_count = 0  # Reset the counters at the beginning of each iteration
+    correct_reconstructions_count = 0
     total_reconstructions_count = 0
 
     for exemplar, label in exemplars_with_labels:
         for i in range(num_test_sequences):
-            noisy_exemplars = create_noisy_input(exemplar, noise_level=noise_input)
-            recalled_pattern = rbm.recall(noisy_exemplars, n_gibbs=gibbs)
+            noisy_exemplars = create_noisy_input(exemplar, noise_level=noise)
+            recalled_pattern = rbm.recall(noisy_exemplars)
             total_reconstructions_count += 1
-            similarity = jaccard_similarity(recalled_pattern, exemplar)
-            
-            # Display the patterns if the reconstruction is successful
-            if similarity >= similarity_threshold:
+
+            # Compute Hamming distances between the recalled pattern and all exemplars
+            distances = np.array([hamming_distance(recalled_pattern, exemplar) for exemplar, _ in exemplars_with_labels])
+
+            # Apply MAXNET to find the exemplar with the minimum Hamming distance
+            min_distance_idx = maxnet(-distances)  # Note that we use the negative of the distances, as MAXNET selects the largest value
+
+            # Check if the selected exemplar has a Hamming distance below the threshold
+            if distances[min_distance_idx] >= hamming_threshold:
                 correct_reconstructions_count += 1
-                # print(f"Exemplar: {label}, Test sequence: {i + 1}, Similarity: {similarity:.2f}")
-                # display_patterns(exemplar, noisy_exemplars, recalled_pattern)
+                print(f"Exemplar: {label}, Test sequence: {i + 1}, Similarity: {distances[min_distance_idx] / 100:.2f}")
+                display_patterns(exemplar, noisy_exemplars, recalled_pattern)
 
     performance = correct_reconstructions_count / total_reconstructions_count
+    print(f"Gibbs cycles: {gibbs}, Noise level: {noise:.2f}, Threshold: {hamming_threshold}, Frequency of correct reconstructions: {performance:.2f} \n")
+    
     correct_reconstructions.append(performance)
     
-    print(f"Gibbs cycles: {gibbs}, Frequency of correct reconstructions: {performance:.2f}")
-
-    if performance > best_performance:
-        best_performance = performance
-        best_gibbs = gibbs
-
-print(f"Optimal number of Gibbs cycles: {best_gibbs}, Best performance: {best_performance:.2f}")
+if performance > best_performance:
+    best_performance = performance
+    best_threshold = hamming_threshold
+    best_noise_level = noise
+    best_gibbs = gibbs
 
 # Plot the relationship between the number of Gibbs cycles and the frequency of correct reconstructions
 plt.plot(gibbs_values, correct_reconstructions, marker='o')
