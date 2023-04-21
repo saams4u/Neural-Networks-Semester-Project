@@ -1,7 +1,6 @@
 
 import numpy as np
 import random
-import itertools
 import matplotlib.pyplot as plt
 
 # Import exemplars representing numerals 0 to 7 in a 100-element format (10x10 rasterized array).
@@ -169,11 +168,6 @@ correct_reconstructions = []
 noise = 0.1
 gibbs_values = range(1, 201, 20)
 
-best_performance = 0
-best_threshold = None
-best_noise_level = None
-best_gibbs = None
-
 for gibbs in gibbs_values:
     rbm = RestrictedBoltzmannMachine(100, 100)
     rbm.train([exemplar for exemplar, _ in exemplars_with_labels], gibbs=gibbs)
@@ -184,7 +178,7 @@ for gibbs in gibbs_values:
     for exemplar, label in exemplars_with_labels:
         for i in range(num_test_sequences):
             noisy_exemplars = create_noisy_input(exemplar, noise_level=noise)
-            recalled_pattern = rbm.recall(noisy_exemplars)
+            recalled_pattern = rbm.recall(noisy_exemplars, n_gibbs=gibbs)
             total_reconstructions_count += 1
 
             # Compute Hamming distances between the recalled pattern and all exemplars
@@ -203,12 +197,6 @@ for gibbs in gibbs_values:
     print(f"Gibbs cycles: {gibbs}, Noise level: {noise:.2f}, Threshold: {hamming_threshold}, Frequency of correct reconstructions: {performance:.2f} \n")
     
     correct_reconstructions.append(performance)
-    
-if performance > best_performance:
-    best_performance = performance
-    best_threshold = hamming_threshold
-    best_noise_level = noise
-    best_gibbs = gibbs
 
 # Plot the relationship between the number of Gibbs cycles and the frequency of correct reconstructions
 plt.plot(gibbs_values, correct_reconstructions, marker='o')

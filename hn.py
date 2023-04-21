@@ -27,7 +27,6 @@ class HopfieldNetwork:
             current_pattern[idx] = 1 if dot_product >= 0 else -1
         return current_pattern
 
-# Accepts a pattern and a list of noise levels, and returns a list of noisy patterns with the specified noise levels
 def create_noisy_inputs(pattern, noise_levels):
     noisy_patterns = []
     for noise_level in noise_levels:
@@ -36,11 +35,14 @@ def create_noisy_inputs(pattern, noise_levels):
         noisy_pattern[indices] = -noisy_pattern[indices]
         noisy_patterns.append(noisy_pattern)
     return noisy_patterns
-    
+
 def display_pattern(pattern):
     reshaped_pattern = pattern.reshape(10, 10)
     plt.imshow(reshaped_pattern, cmap='gray')
     plt.show()
+
+def accuracy(original, recalled):
+    return np.sum(original == recalled) / len(original)
 
 # Train the Hopfield network
 network = HopfieldNetwork(100)
@@ -56,7 +58,8 @@ for i, exemplar in enumerate(exemplars):
         noisy_exemplars = create_noisy_inputs(exemplar, [noise_level])
         recalled_pattern = network.recall(noisy_exemplars[0])
 
-        print(f"Exemplar {i}, Sequence {j+1}")
+        acc = accuracy(exemplar, recalled_pattern)
+        print(f"Exemplar {i}, Sequence {j+1}, Validation Accuracy: {acc*100:.2f}%")
 
         plt.title('Original')
         display_pattern(exemplar)

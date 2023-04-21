@@ -1,6 +1,7 @@
 
 import numpy as np
 
+
 # Define the exemplars as 10x10 arrays
 exemplars = [
     # 0
