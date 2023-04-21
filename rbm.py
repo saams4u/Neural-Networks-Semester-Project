@@ -139,10 +139,8 @@ def maxnet(input_values, epsilon=0.01, max_iterations=1000):
     for _ in range(max_iterations):
         values = values - epsilon * (np.sum(values) - values)
         values[values < 0] = 0
-
         if np.count_nonzero(values) == 1:
             break
-
     return np.argmax(values)
 
 def display_patterns(original, noisy, reconstructed):
@@ -161,16 +159,20 @@ def display_patterns(original, noisy, reconstructed):
 # Add labels to the exemplars
 exemplars_with_labels = list(zip(exemplars, range(len(exemplars))))
 
-# Initialize search parameters
+# Initialize parameters
 num_test_sequences = 2
-hamming_threshold = 80  # Updated threshold for Hamming distance
+hamming_threshold = 80 
 correct_reconstructions = []
-noise = 0.1
+noise = 0.1  
 gibbs_values = range(1, 201, 20)
 
 for gibbs in gibbs_values:
     rbm = RestrictedBoltzmannMachine(100, 100)
-    rbm.train([exemplar for exemplar, _ in exemplars_with_labels], gibbs=gibbs)
+    rbm.train([exemplar for exemplar, _ in exemplars_with_labels], 
+               learning_rate=0.005, 
+               n_epochs=30, 
+               batch_size=8, 
+               gibbs=gibbs)
 
     correct_reconstructions_count = 0
     total_reconstructions_count = 0
