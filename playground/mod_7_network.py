@@ -21,7 +21,7 @@ class ModSevenNetwork:
 
     # Define the derivative of the sigmoid function
     def sigmoid_derivative(x: float) -> float:
-        return NeuralNetwork.sigmoid(x) * (1 - NeuralNetwork.sigmoid(x))
+        return ModSevenNetwork.sigmoid(x) * (1 - ModSevenNetwork.sigmoid(x))
 
     # Train the neural network using the training data
     def train(self, training_data: List[Dict[str, float]]):
@@ -32,16 +32,16 @@ class ModSevenNetwork:
                 targets = np.array([[TACA]]).T
 
                 # Calculate the output of the hidden and output layers
-                hidden_layer_output = NeuralNetwork.sigmoid(np.dot(self.weights_input_hidden.T, inputs))
-                output_layer_output = NeuralNetwork.sigmoid(np.dot(self.weights_hidden_output.T, hidden_layer_output))
+                hidden_layer_output = ModSevenNetwork.sigmoid(np.dot(self.weights_input_hidden.T, inputs))
+                output_layer_output = ModSevenNetwork.sigmoid(np.dot(self.weights_hidden_output.T, hidden_layer_output))
 
                 # Calculate the error for the output and hidden layers
                 output_error = targets - output_layer_output
                 hidden_error = np.dot(self.weights_hidden_output, output_error)
 
                 # Calculate the deltas for the output and hidden layers
-                delta_output = output_error * NeuralNetwork.sigmoid_derivative(np.dot(self.weights_hidden_output.T, hidden_layer_output))
-                delta_hidden = hidden_error * NeuralNetwork.sigmoid_derivative(np.dot(self.weights_input_hidden.T, inputs))
+                delta_output = output_error * ModSevenNetwork.sigmoid_derivative(np.dot(self.weights_hidden_output.T, hidden_layer_output))
+                delta_hidden = hidden_error * ModSevenNetwork.sigmoid_derivative(np.dot(self.weights_input_hidden.T, inputs))
 
                 # Update the weights of the output and hidden layers
                 self.weights_hidden_output += self.learning_rate * np.dot(hidden_layer_output, delta_output.T)
@@ -49,8 +49,8 @@ class ModSevenNetwork:
 
     # Predict the output given inputs using the trained neural network
     def predict(self, inputs: np.ndarray) -> np.ndarray:
-        hidden_layer_output = NeuralNetwork.sigmoid(np.dot(self.weights_input_hidden.T, inputs))
-        output_layer_output = NeuralNetwork.sigmoid(np.dot(self.weights_hidden_output.T, hidden_layer_output))
+        hidden_layer_output = ModSevenNetwork.sigmoid(np.dot(self.weights_input_hidden.T, inputs))
+        output_layer_output = ModSevenNetwork.sigmoid(np.dot(self.weights_hidden_output.T, hidden_layer_output))
         return output_layer_output
 
     # Find the best threshold to minimize false positives and false negatives
