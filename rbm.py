@@ -1,10 +1,8 @@
 
+# Import necessary libraries
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-
-# Import exemplars representing numerals 0 to 7 in a 100-element format (10x10 rasterized array).
-from data import exemplars
 
 
 # Define Restricted Boltzmann Machine class
@@ -103,7 +101,7 @@ class RestrictedBoltzmannMachine:
                 stopping_counter += 1
 
             if stopping_counter >= early_stopping_rounds:
-                print(f"Early stopping at epoch {epoch + 1}. Best performance at epoch {best_epoch + 1}: {best_performance / 100:.2f}")
+                print(f"\nEarly stopping at epoch {epoch + 1}. Best performance at epoch {best_epoch + 1}: {best_performance / 100:.2f}")
                 self.weights = best_weights
                 self.visible_bias = best_visible_bias
                 self.hidden_bias = best_hidden_bias
@@ -156,6 +154,121 @@ def display_patterns(original, noisy, reconstructed):
     axes[2].axis('off')
     plt.show()
 
+# Define the exemplars as 10x10 arrays
+exemplars = [
+    # 0
+    np.array([
+        [-1,  1,  1,  1,  1,  1,  1,  1, -1, -1],
+        [ 1,  1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [ 1, -1, -1, -1, -1, -1, -1, -1,  1, -1],
+        [ 1, -1, -1, -1, -1, -1, -1, -1,  1, -1],
+        [ 1, -1, -1, -1, -1, -1, -1, -1,  1, -1],
+        [ 1, -1, -1, -1, -1, -1, -1, -1,  1, -1],
+        [ 1, -1, -1, -1, -1, -1, -1, -1,  1, -1],
+        [ 1,  1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [-1,  1,  1,  1,  1,  1,  1,  1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    ]).flatten(),
+
+    # 1
+    np.array([
+        [-1, -1, -1,  1,  1, -1, -1, -1, -1, -1],
+        [-1, -1,  1,  1,  1, -1, -1, -1, -1, -1],
+        [-1,  1, -1,  1,  1, -1, -1, -1, -1, -1],
+        [-1, -1, -1,  1,  1, -1, -1, -1, -1, -1],
+        [-1, -1, -1,  1,  1, -1, -1, -1, -1, -1],
+        [-1, -1, -1,  1,  1, -1, -1, -1, -1, -1],
+        [-1, -1, -1,  1,  1, -1, -1, -1, -1, -1],
+        [-1, -1, -1,  1,  1, -1, -1, -1, -1, -1],
+        [-1, -1, -1,  1,  1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    ]).flatten(),
+
+    # 2
+    np.array([
+        [-1,  1,  1,  1,  1,  1,  1, -1, -1, -1],
+        [ 1,  1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1,  1,  1],
+        [-1, -1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [-1,  1,  1,  1,  1,  1,  1,  1, -1, -1],
+        [ 1,  1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [ 1,  1,  1,  1,  1,  1,  1,  1,  1,  1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    ]).flatten(),
+
+    # 3
+    np.array([
+        [-1,  1,  1,  1,  1,  1,  1, -1, -1, -1],
+        [ 1,  1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1,  1,  1],
+        [-1, -1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [-1, -1, -1,  1,  1,  1,  1,  1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [ 1,  1, -1, -1, -1, -1, -1, -1,  1,  1],
+        [-1,  1,  1,  1,  1,  1,  1,  1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    ]).flatten(),
+
+    # 4
+    np.array([
+        [-1, -1, -1, -1, -1, -1, -1, -1,  1,  1],
+        [-1, -1, -1, -1, -1, -1, -1,  1,  1,  1],
+        [-1, -1, -1, -1, -1, -1,  1,  1, -1,  1],
+        [-1, -1, -1, -1, -1,  1,  1,  1, -1,  1],
+        [ 1,  1,  1,  1,  1,  1,  1,  1,  1,  1],
+        [-1, -1, -1, -1, -1, -1, -1, -1,  1,  1],
+        [-1, -1, -1, -1, -1, -1, -1, -1,  1,  1],
+        [-1, -1, -1, -1, -1, -1, -1, -1,  1,  1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    ]).flatten(),
+
+    # 5
+    np.array([
+        [ 1,  1,  1,  1,  1,  1,  1,  1,  1, -1],
+        [ 1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [ 1,  1,  1,  1,  1,  1,  1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [-1, -1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [-1, -1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [ 1,  1, -1, -1, -1, -1, -1, -1,  1,  1],
+        [-1,  1,  1,  1,  1,  1,  1,  1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    ]).flatten(),
+
+    # 6
+    np.array([
+        [-1, -1, -1,  1,  1,  1,  1,  1, -1, -1],
+        [-1, -1,  1,  1, -1, -1, -1, -1, -1, -1],
+        [-1,  1,  1, -1, -1, -1, -1, -1, -1, -1],
+        [ 1,  1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [ 1,  1,  1,  1,  1,  1,  1, -1, -1, -1],
+        [ 1,  1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [ 1,  1, -1, -1, -1, -1, -1, -1,  1,  1],
+        [-1,  1,  1, -1, -1, -1, -1,  1,  1,  1],
+        [-1, -1,  1,  1,  1,  1,  1,  1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    ]).flatten(),
+
+    # 7
+    np.array([
+        [ 1,  1,  1,  1,  1,  1,  1,  1,  1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1,  1,  1],
+        [-1, -1, -1, -1, -1, -1, -1,  1,  1, -1],
+        [-1, -1, -1, -1, -1, -1,  1,  1, -1, -1],
+        [-1, -1, -1, -1, -1,  1,  1, -1, -1, -1],
+        [-1, -1, -1, -1,  1,  1, -1, -1, -1, -1],
+        [-1, -1, -1,  1,  1, -1, -1, -1, -1, -1],
+        [-1, -1,  1,  1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    ]).flatten()
+]
+
 # Add labels to the exemplars
 exemplars_with_labels = list(zip(exemplars, range(len(exemplars))))
 
@@ -192,11 +305,11 @@ for gibbs in gibbs_values:
             # Check if the selected exemplar has a Hamming distance below the threshold
             if distances[min_distance_idx] >= hamming_threshold:
                 correct_reconstructions_count += 1
-                print(f"Exemplar: {label}, Test sequence: {i + 1}, Similarity: {distances[min_distance_idx] / 100:.2f}")
-                display_patterns(exemplar, noisy_exemplars, recalled_pattern)
+                # print(f"Exemplar: {label}, Test sequence: {i + 1}, Similarity: {distances[min_distance_idx] / 100:.2f}")
+                # display_patterns(exemplar, noisy_exemplars, recalled_pattern)
 
     performance = correct_reconstructions_count / total_reconstructions_count
-    print(f"Gibbs cycles: {gibbs}, Noise level: {noise:.2f}, Threshold: {hamming_threshold}, Frequency of correct reconstructions: {performance:.2f} \n")
+    print(f"Gibbs cycles: {gibbs}, Noise level: {noise:.2f}, Threshold: {hamming_threshold}\n")
     
     correct_reconstructions.append(performance)
 
