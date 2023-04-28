@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 
-exemplars = [
+exemplars = np.array([
     # 0
     np.array([
         [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1],
@@ -108,7 +108,7 @@ exemplars = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ]).flatten()
-]
+])
 
 def load_noisy_data(threshold: float=0.9):
     noisy = []
