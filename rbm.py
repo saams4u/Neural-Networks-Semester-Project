@@ -98,13 +98,13 @@ class RBM:
     def _learning_rate_decay(self, epoch, decay_rate=0.9):
         return decay_rate ** epoch
 
-def train_and_evaluate_gibbs_cycles(gibbs_cycle_list, test_data, test_noise_factor):
+def train_and_evaluate_gibbs_cycles(gibbs_cycle_list, test_data, test_noise_factor, epochs, learning_rate):
     correct_reconstructions = []
     for gibbs_cycles in gibbs_cycle_list:
         print(f"Training with {gibbs_cycles} Gibbs cycles...")
         # Train the exemplars with their respective labels
         train_exemplars = [exemplar for exemplar, _ in train_data]
-        rbm.train(train_exemplars, epochs=100, learning_rate=0.005, gibbs_steps=gibbs_cycles, validation_data=test_data)
+        rbm.train(train_exemplars, epochs=epochs, learning_rate=learning_rate, gibbs_steps=gibbs_cycles, validation_data=test_data)
         
         # Create noisy versions of the test exemplars
         noisy_test_exemplars = [rbm.add_noise(exemplar, noise_factor=test_noise_factor) for exemplar in test_exemplars]
@@ -199,7 +199,7 @@ def plot_exemplars_for_two_labels(gibbs_cycles, labels, test_exemplars, noisy_te
     plt.tight_layout()
 
     ## Save the plot as a PNG file with the accompanying metadata
-    # metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_learning_rate-0.005_epochs-100"
+    # metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_learning_rate-{learning_rate}_epochs-{epochs}"
     # filename = f"exemplars_gibbs_cycles-{gibbs_cycles}{metadata}.png"
     # save_directory = "rbm_plots/noise_factor_0.5/6_and_7"
     # if not os.path.exists(save_directory):
@@ -231,7 +231,7 @@ def plot_exemplars_for_all_labels(gibbs_cycles, labels, test_exemplars, noisy_te
     plt.tight_layout()
 
     ## Save the plot as a PNG file with the accompanying metadata
-    # metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_learning_rate-0.005_epochs-100"
+    # metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_learning_rate-{learning_rate}_epochs-{epochs}"
     # filename = f"exemplars_gibbs_cycles-{gibbs_cycles}{metadata}.png"
     # save_directory = "rbm_plots/noise_factor_0.5/all_numerals"
     # if not os.path.exists(save_directory):
@@ -242,10 +242,12 @@ def plot_exemplars_for_all_labels(gibbs_cycles, labels, test_exemplars, noisy_te
 
 # Define the network parameters
 num_classes = 8  # Given there are 8 classes (0 to 7)
-num_samples = 240
+num_samples = 560
 test_size = 0.1
 num_hidden = 5
-noise_factor = 0.5
+noise_factor = 0.99
+learning_rate = 0.001
+epochs = 5
 
 # Instantiate the RBM network
 rbm = RBM(num_visible=100, num_hidden=num_hidden) 
@@ -271,7 +273,7 @@ test_data = test_exemplars, test_labels
 
 # Test the performance of the RBM with different numbers of Gibbs cycles
 gibbs_cycle_list = [1, 5, 10, 20, 50, 100]
-correct_reconstructions = train_and_evaluate_gibbs_cycles(gibbs_cycle_list, test_data, noise_factor)
+correct_reconstructions = train_and_evaluate_gibbs_cycles(gibbs_cycle_list, test_data, noise_factor, epochs, learning_rate)
 print("\nFrequencies of correct reconstructions:", correct_reconstructions)
 
 
