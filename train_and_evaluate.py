@@ -1,5 +1,5 @@
 
-# Import to calculate Euclidean distance
+# Import to calculate Euclidean distance for similarity metric
 from scipy.spatial.distance import euclidean
 
 
@@ -49,16 +49,16 @@ def train_and_evaluate_gibbs_cycles(gibbs_cycle_list, test_data, test_noise_fact
         #                               reconstructed_test_exemplars)
 
         ## Call function to plot original, noisy, and reconstructed exemplars for all labels
-        # plot_exemplars_for_all_labels(gibbs_cycles, 
-        #                               labels, 
-        #                               test_exemplars, 
-        #                               noisy_test_exemplars, 
-        #                               reconstructed_test_exemplars)
+        plot_exemplars_for_all_labels(gibbs_cycles, 
+                                      labels, 
+                                      test_exemplars, 
+                                      noisy_test_exemplars, 
+                                      reconstructed_test_exemplars)
 
     # Brief delay (for debugging purposes)
-    # time.sleep(3)
+    time.sleep(3)
 
     # Call function to plot RBM performance with respect to Gibbs sampling cycles
-    # plot_rbm_performance(gibbs_cycle_list, correct_reconstructions)
+    plot_rbm_performance(gibbs_cycle_list, correct_reconstructions)
 
     return correct_reconstructions
