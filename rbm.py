@@ -113,7 +113,7 @@ gibbs_cycle_list = [1, 5, 10, 20, 50, 100]
 best_params = None
 best_accuracy = -1
 
-with open('grid_search_output.txt', 'w') as output_file:
+with open('grid_search/trial_01.txt', 'w') as output_file:
     for num_samples, test_size, num_hidden, noise_factor, learning_rate, epochs in product(num_samples_options, 
                                                                                            test_size_options, 
                                                                                            num_hidden_options, 
