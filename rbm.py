@@ -8,7 +8,7 @@ from itertools import product
 from data import exemplars
 
 # Import plot functions
-from utilities import plot_for_two_labels, plot_for_all_labels, plot_rbm_performance
+from plot_exemplars import plot_for_two_labels, plot_for_all_labels, plot_rbm_performance
 
 # Import to train and evaluate RBM
 from train_and_evaluate import train_and_evaluate_gibbs_cycles
