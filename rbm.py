@@ -1,15 +1,9 @@
 
-# Import the requisite libraries
-import os
-import time
-import numpy as np
-import matplotlib.pyplot as plt
-
-from itertools import product
-from scipy.spatial.distance import euclidean
-
 # Import the exemplar data
 from data import exemplars
+
+# Import plot functions with utility libraries
+from utilities import plot_for_two_labels, plot_for_all_labels, plot_rbm_performance
 
 
 # Implement the Restricted Boltzmann Machine class
@@ -159,88 +153,6 @@ def train_and_evaluate_gibbs_cycles(gibbs_cycle_list, test_data, test_noise_fact
 
     return correct_reconstructions
 
-def plot_rbm_performance(gibbs_cycles, correct_reconstructions):
-    # Plot relationship between number of Gibbs cycles and frequency of correct reconstructions
-    plt.plot(gibbs_cycles, correct_reconstructions, marker='o')
-    plt.xlabel('Number of Gibbs sampling cycles')
-    plt.ylabel('Frequency of correct reconstructions')
-    plt.title('Measuring the Performance of the RBM')
-    plt.grid()
-
-    ## Save the plot as a PNG file
-    # filename = "rbm_performance.png"
-    # save_directory = "rbm_plots/noise_factor_0.5/all_numerals"
-    # if not os.path.exists(save_directory):
-    #     os.makedirs(save_directory)
-    # plt.savefig(os.path.join(save_directory, filename), dpi=300)
-
-    plt.show()
-
-def plot_exemplars_for_two_labels(gibbs_cycles, labels, test_exemplars, noisy_test_exemplars, reconstructed_test_exemplars):
-    # Change indices below to a discrete sequence pair (i.e., 0 & 1, 2 & 3, etc.)
-    index_1 = 0
-    index_2 = 1
-    unique_labels = np.unique(labels)[index_1:index_2+1]
-    for i, label in enumerate(unique_labels):
-        label_indices = [index for index, lbl in enumerate(test_labels) if lbl == label]
-        index = label_indices[0]
-
-        plt.subplot(2, 3, i * 3 + 1)
-        rbm.plot_digit(test_exemplars[index])
-        plt.title(f"Original {label}")
-
-        plt.subplot(2, 3, i * 3 + 2)
-        rbm.plot_digit(noisy_test_exemplars[index])
-        plt.title(f"Noisy {label}")
-
-        plt.subplot(2, 3, i * 3 + 3)
-        rbm.plot_digit(reconstructed_test_exemplars[index])
-        plt.title(f"Reconstructed {label}")
-
-    plt.tight_layout()
-
-    ## Save the plot as a PNG file with the accompanying metadata
-    # metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_learning_rate-{learning_rate}_epochs-{epochs}"
-    # filename = f"exemplars_gibbs_cycles-{gibbs_cycles}{metadata}.png"
-    # save_directory = "rbm_plots/noise_factor_0.5/6_and_7"
-    # if not os.path.exists(save_directory):
-    #     os.makedirs(save_directory)
-    # plt.savefig(os.path.join(save_directory, filename), dpi=300)
-
-    plt.show()
-
-def plot_exemplars_for_all_labels(gibbs_cycles, labels, test_exemplars, noisy_test_exemplars, reconstructed_test_exemplars):
-    unique_labels = np.unique(labels)  # Include all unique labels (0 to 7)
-    num_labels = len(unique_labels)
-
-    for i, label in enumerate(unique_labels):
-        label_indices = [index for index, lbl in enumerate(test_labels) if lbl == label]
-        index = label_indices[0]
-
-        plt.subplot(num_labels, 3, i * 3 + 1)
-        rbm.plot_digit(test_exemplars[index])
-        plt.title(f"Original {label}")
-
-        plt.subplot(num_labels, 3, i * 3 + 2)
-        rbm.plot_digit(noisy_test_exemplars[index])
-        plt.title(f"Noisy {label}")
-
-        plt.subplot(num_labels, 3, i * 3 + 3)
-        rbm.plot_digit(reconstructed_test_exemplars[index])
-        plt.title(f"Reconstructed {label}")
-
-    plt.tight_layout()
-
-    ## Save the plot as a PNG file with the accompanying metadata
-    # metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_learning_rate-{learning_rate}_epochs-{epochs}"
-    # filename = f"exemplars_gibbs_cycles-{gibbs_cycles}{metadata}.png"
-    # save_directory = "rbm_plots/noise_factor_0.5/all_numerals"
-    # if not os.path.exists(save_directory):
-    #     os.makedirs(save_directory)
-    # plt.savefig(os.path.join(save_directory, filename), dpi=300)
-
-    plt.show()
-
 num_classes = 8  # Given there are 8 classes (0 to 7)
 num_samples_options = [120, 240, 480, 960]
 test_size_options = [0.1, 0.2, 0.3, 0.4]
@@ -312,26 +224,3 @@ with open('grid_search_output.txt', 'w') as output_file:
 
 print("Best parameters:", best_params)
 print("Best accuracy:", best_accuracy)
-
-
-'''
-How does changing the number of cycles improve the numbers of correct reconstruction?
-
-Changing the number of Gibbs sampling cycles in a Restricted Boltzmann Machine (RBM) can affect the quality of the 
-reconstructions. Gibbs sampling is a Markov Chain Monte Carlo (MCMC) technique used to approximate the equilibrium 
-distribution of visible and hidden states in the RBM. In the context of the RBM, it helps the model learn the 
-underlying data representation and reconstruct input samples.
-
-Increasing the number of Gibbs cycles allows the model to sample from the RBM's distribution more thoroughly, which 
-can lead to better reconstructions. This improvement happens because the Markov chain reaches a better equilibrium 
-state, allowing the model to learn more about the data distribution. As a result, the reconstructed samples are more 
-accurate, leading to a higher number of correct reconstructions.
-
-However, there's a trade-off involved in choosing the number of Gibbs cycles. More cycles generally lead to better 
-reconstructions, but they also increase the computational complexity and training time of the model. If the number 
-of cycles is too high, the improvement in reconstruction accuracy might not be worth the additional computational cost.
-
-It's essential to find a balance between the number of Gibbs cycles and the model's performance to ensure efficient 
-training and accurate reconstructions. In practice, we can experiment with different numbers of cycles and observe 
-how it impacts the model's performance to find an optimal value for our specific problem.
-'''
