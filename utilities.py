@@ -1,11 +1,6 @@
 
-# Import utility libraries
-import os
-import time
+# Import for plotting
 import matplotlib.pyplot as plt
-
-from itertools import product
-from scipy.spatial.distance import euclidean
 
 
 def plot_for_two_labels(gibbs_cycles, labels, test_exemplars, noisy_test_exemplars, reconstructed_test_exemplars):

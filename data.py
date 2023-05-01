@@ -1,7 +1,6 @@
 
-# Import utility libraries
+# Import for numerical computing
 import numpy as np
-from copy import deepcopy
 
 
 # Define the exemplars as 10x10 arrays
