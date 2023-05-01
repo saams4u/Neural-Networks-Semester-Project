@@ -3,8 +3,9 @@
 import os
 import time
 import numpy as np
-
 import matplotlib.pyplot as plt
+
+from itertools import product
 from scipy.spatial.distance import euclidean
 
 # Import the exemplar data
@@ -137,11 +138,11 @@ def train_and_evaluate_gibbs_cycles(gibbs_cycle_list, test_data, test_noise_fact
         '''
         
         ## Call function to plot original, noisy, and reconstructed exemplars for two labels at a time 
-        plot_exemplars_for_two_labels(gibbs_cycles, 
-                                      test_labels, 
-                                      test_exemplars, 
-                                      noisy_test_exemplars, 
-                                      reconstructed_test_exemplars)
+        # plot_exemplars_for_two_labels(gibbs_cycles, 
+        #                               test_labels, 
+        #                               test_exemplars, 
+        #                               noisy_test_exemplars, 
+        #                               reconstructed_test_exemplars)
 
         ## Call function to plot original, noisy, and reconstructed exemplars for all labels
         # plot_exemplars_for_all_labels(gibbs_cycles, 
@@ -151,10 +152,10 @@ def train_and_evaluate_gibbs_cycles(gibbs_cycle_list, test_data, test_noise_fact
         #                               reconstructed_test_exemplars)
 
     # Brief delay (for debugging purposes)
-    time.sleep(3)
+    # time.sleep(3)
 
     # Call function to plot RBM performance with respect to Gibbs sampling cycles
-    plot_rbm_performance(gibbs_cycle_list, correct_reconstructions)
+    # plot_rbm_performance(gibbs_cycle_list, correct_reconstructions)
 
     return correct_reconstructions
 
@@ -240,41 +241,77 @@ def plot_exemplars_for_all_labels(gibbs_cycles, labels, test_exemplars, noisy_te
 
     plt.show()
 
-# Define the network parameters
 num_classes = 8  # Given there are 8 classes (0 to 7)
-num_samples = 560
-test_size = 0.1
-num_hidden = 5
-noise_factor = 0.99
-learning_rate = 0.001
-epochs = 5
-
-# Instantiate the RBM network
-rbm = RBM(num_visible=100, num_hidden=num_hidden) 
-
-# Generate noisy samples to train on
-samples = rbm.generate_samples(exemplars, num_samples=num_samples, noise_factor=noise_factor)
-
-# Normalize the generated noisy samples
-exemplars_normalized = [sample * 0.5 + 0.5 for sample in samples]
-
-# Generate labels based on the index of the exemplars
-num_exemplars_per_class = len(exemplars_normalized) // num_classes
-labels = np.repeat(np.arange(num_classes), num_exemplars_per_class)
-
-# Combine exemplars with their labels
-exemplars_with_labels = list(zip(exemplars_normalized, labels))
-
-# Split data into training and testing sets using the custom function
-train_data, (test_exemplars, test_labels) = rbm.split_data(exemplars_with_labels, test_size=test_size, random_seed=42, original_exemplars=exemplars)
-
-# Separate digit arrays and labels in the testing set
-test_data = test_exemplars, test_labels
-
-# Test the performance of the RBM with different numbers of Gibbs cycles
+num_samples_options = [120, 240, 480, 960]
+test_size_options = [0.1, 0.2, 0.3, 0.4]
+num_hidden_options = [5, 10, 15, 20]
+noise_factor_options = [0.3, 0.5, 0.7, 0.9]
+learning_rate_options = [0.001, 0.003, 0.005, 0.007]
+epochs_options = [50, 100, 150, 200]
 gibbs_cycle_list = [1, 5, 10, 20, 50, 100]
-correct_reconstructions = train_and_evaluate_gibbs_cycles(gibbs_cycle_list, test_data, noise_factor, epochs, learning_rate)
-print("\nFrequencies of correct reconstructions:", correct_reconstructions)
+
+best_params = None
+best_accuracy = -1
+
+with open('grid_search_output.txt', 'w') as output_file:
+    for num_samples, test_size, num_hidden, noise_factor, learning_rate, epochs in product(num_samples_options, 
+                                                                                           test_size_options, 
+                                                                                           num_hidden_options, 
+                                                                                           noise_factor_options, 
+                                                                                           learning_rate_options, 
+                                                                                           epochs_options):
+
+        print(f"Training with parameters: num_samples={num_samples}, test_size={test_size}, num_hidden={num_hidden}, noise_factor={noise_factor}, learning_rate={learning_rate}, epochs={epochs}", file=output_file)
+
+        # Instantiate the RBM network
+        rbm = RBM(num_visible=100, num_hidden=num_hidden)
+
+        # Generate noisy samples to train on
+        samples = rbm.generate_samples(exemplars, num_samples=num_samples, noise_factor=noise_factor)
+
+        # Normalize the generated noisy samples
+        exemplars_normalized = [sample * 0.5 + 0.5 for sample in samples]
+
+        # Generate labels based on the index of the exemplars
+        num_exemplars_per_class = len(exemplars_normalized) // num_classes
+        labels = np.repeat(np.arange(num_classes), num_exemplars_per_class)
+
+        # Combine exemplars with their labels
+        exemplars_with_labels = list(zip(exemplars_normalized, labels))
+
+        # Split data into training and testing sets using the custom function
+        train_data, (test_exemplars, test_labels) = rbm.split_data(exemplars_with_labels, 
+                                                                   test_size=test_size, 
+                                                                   random_seed=42, 
+                                                                   original_exemplars=exemplars)
+
+        # Separate digit arrays and labels in the testing set
+        test_data = test_exemplars, test_labels
+
+        # Test the performance of the RBM with the current set of parameters
+        correct_reconstructions = train_and_evaluate_gibbs_cycles(gibbs_cycle_list, 
+                                                                  test_data, 
+                                                                  noise_factor, 
+                                                                  epochs, 
+                                                                  learning_rate)
+        current_accuracy = max(correct_reconstructions)
+
+        print(f"Current accuracy: {current_accuracy}", file=output_file)
+
+        # Update the best parameters if the current accuracy is higher than the previous best
+        if current_accuracy > best_accuracy:
+            best_accuracy = current_accuracy
+            best_params = {
+                'num_samples': num_samples,
+                'test_size': test_size,
+                'num_hidden': num_hidden,
+                'noise_factor': noise_factor,
+                'learning_rate': learning_rate,
+                'epochs': epochs
+            }
+
+print("Best parameters:", best_params)
+print("Best accuracy:", best_accuracy)
 
 
 '''
