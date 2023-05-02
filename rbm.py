@@ -110,7 +110,7 @@ class RBM:
         return noisy_exemplar
 
     def plot_digit(self, digit_array):
-        plt.imshow(digit_array.reshape(10, 10), cmap="gray")
+        plt.imshow(digit_array.reshape(10, 10))
         plt.axis("off")
 
     def split_data(self, data, test_size=None, random_seed=None, original_exemplars=None):
@@ -130,7 +130,7 @@ class RBM:
 num_classes           = 8
 num_samples           = 50
 test_size_options     = [0.1, 0.2]
-num_classes           = 8  # Given there are 8 classes (0 to 7)
+num_classes           = 8
 num_samples           = 50
 test_size_options     = [0.1, 0.2]
 num_hidden_options    = [20, 40, 60, 80, 100, 120]

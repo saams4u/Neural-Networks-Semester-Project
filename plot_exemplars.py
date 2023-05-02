@@ -73,7 +73,7 @@ def plot_for_all_labels(rbm,
     num_labels = len(unique_labels)
 
     plt.figure(1, figsize=(10, 10))
-    
+
     for i, label in enumerate(unique_labels):
         label_indices = [index for index, lbl in enumerate(test_labels) if lbl == label]
         index = label_indices[0]
@@ -103,10 +103,10 @@ def plot_for_all_labels(rbm,
         os.makedirs(save_directory)
     plt.savefig(os.path.join(save_directory, filename), dpi=300)
 
-    # if output_file:
-    #     plt.savefig(os.path.join(save_directory, filename), dpi=300)
-    # else:
-    plt.show()
+    if output_file:
+        plt.savefig(os.path.join(save_directory, filename), dpi=300)
+    else:
+        plt.show()
         
 def plot_rbm_performance(gibbs_cycles, correct_reconstructions, index_1, index_2, output_file=None):
     # Plot relationship between number of Gibbs cycles and frequency of correct reconstructions

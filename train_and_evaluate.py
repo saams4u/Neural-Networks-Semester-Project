@@ -2,11 +2,13 @@
 # Import helper functions
 import time
 import numpy as np
-from scipy.spatial.distance import euclidean
 
 # Import plot functions
 from plot_exemplars import plot_for_two_labels, plot_for_all_labels, plot_rbm_performance
 
+
+def mean_squared_error(y_true, y_pred):
+    return np.mean((y_true - y_pred)**2)
 
 def train_and_evaluate_gibbs_cycles(rbm,
                                     iters,
@@ -41,10 +43,10 @@ def train_and_evaluate_gibbs_cycles(rbm,
         correct_reconstructions_count = 0
         for _, (reconstructed_exemplar, true_label) in enumerate(zip(reconstructed_test_exemplars, test_labels)):
             # Calculate the Euclidean distance between the reconstructed exemplar and all exemplars
-            distances = [euclidean((reconstructed_exemplar > 0.5).astype(int), (exemplar > 0.5).astype(int)) for exemplar, _ in train_data]
+            mse_values = [mean_squared_error((reconstructed_exemplar > 0.5).astype(int), (exemplar > 0.5).astype(int)) for exemplar, _ in train_data]
 
-            # Find the index of the most similar exemplar (smallest Euclidean distance)
-            most_similar_index = np.argmin(distances)
+            # Find the index of the most similar exemplar (smallest MSE)
+            most_similar_index = np.argmin(mse_values)
 
             # Check if the most similar exemplar has the same label as the true label
             if train_data[most_similar_index][1] == true_label:
