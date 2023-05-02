@@ -1,14 +1,13 @@
 
+
 # Import helper functions
-import os
 import time
+import numpy as np
+import matplotlib.pyplot as plt
 from itertools import product
 
 # Import exemplar data
 from data import exemplars
-
-# Import plot functions
-from plot_exemplars import plot_for_two_labels, plot_for_all_labels, plot_rbm_performance
 
 # Import to train and evaluate RBM
 from train_and_evaluate import train_and_evaluate_gibbs_cycles
@@ -20,39 +19,54 @@ class RBM:
     def __init__(self, num_visible, num_hidden):
         self.num_visible = num_visible
         self.num_hidden = num_hidden
-        self.weights = np.random.normal(scale=0.01, size=(num_visible, num_hidden))
-        self.visible_bias = np.zeros(num_visible)
-        self.hidden_bias = np.zeros(num_hidden)
+        self.W = np.random.normal(0.0, 0.1, (num_visible, num_hidden))
+        self.a = np.zeros(num_visible)
+        self.b = np.zeros(num_hidden)
 
-    def train(self, data, learning_rate=0.001, epochs=20, gibbs_steps=1, validation_data=None):
+    def sample_visible_layer(self, h):
+        # Calculate visible probabilities
+        activation = np.vectorize(self._sigmoid)
+        visible_probas = activation(np.dot(h, self.W.T) + self.a)
+
+        # Sample visible layer output from calculated probabilties
+        random_vars = np.random.uniform(size=self.num_visible) # Set to this for testing purposes - np.array([0.25, 0.72])
+        return (visible_probas > random_vars).astype(int)
+
+    def sample_hidden_layer(self, v):
+        # Calculate hidden probabilities
+        activation = np.vectorize(self._sigmoid)
+        hidden_probas = activation(np.dot(v, self.W) + self.b)
+
+        # Sample hidden layer output from calculated probabilties
+        random_vars = np.random.uniform(size=self.num_hidden) # Set to this for testing purposes - np.array([0.87, 0.14, 0.64]) 
+        return (hidden_probas > random_vars).astype(int)
+
+    def train(self, data, learning_rate=0.01, epochs=20, gibbs_steps=1, validation_data=None):
         for epoch in range(epochs):
-            for sample in data:
-                # Initialize visible state
-                initial_visible_states = np.copy(sample)
+            for v in data:
+                # Take training sample, and compute probabilties of hidden units and the
+                # sample a hidden activation vector from this probability distribution
+                h = self.sample_hidden_layer(v)
 
-                # Perform Gibbs sampling for the specified number of steps
+                # Compute the outer product of v and h and call this the positive gradient
+                pos_grad = np.outer(v, h)
+
+                # Perform gibbs sampling in for loop so that it is a tunable hyperparameter
+                h_prime = h.copy()
                 for _ in range(gibbs_steps):
-                    # Forward pass
-                    hidden_probs = self._sigmoid(np.dot(initial_visible_states, self.weights) + self.hidden_bias)
-                    hidden_states = (hidden_probs > np.random.random(self.num_hidden)).astype(int)
+                    # From h, sample a reconstruction v' of the visible units
+                    v_prime = self.sample_visible_layer(h_prime)
 
-                    # Backward pass (Gibbs sampling)
-                    visible_probs = self._sigmoid(np.dot(hidden_states, self.weights.T) + self.visible_bias)
-                    visible_states = (visible_probs > np.random.random(self.num_visible)).astype(int)
+                    # Then resample activations h' from this
+                    h_prime = self.sample_hidden_layer(v_prime)
 
-                # Update weights and biases
-                final_hidden_probs = self._sigmoid(np.dot(visible_states, self.weights) + self.hidden_bias)
-                positive_grad = np.outer(initial_visible_states, hidden_probs)
-                negative_grad = np.outer(visible_states, final_hidden_probs)
-
-                weight_update = learning_rate * (positive_grad - negative_grad)
-                visible_bias_update = learning_rate * (initial_visible_states - visible_states)
-                hidden_bias_update = learning_rate * (hidden_probs - final_hidden_probs)
-
-                self.weights += weight_update
-                self.visible_bias += visible_bias_update
-                self.hidden_bias += hidden_bias_update
-
+                # Compute the outer product of v' and h' and call this the negative gradient
+                neg_grad = np.outer(v_prime, h_prime)
+               
+                self.W += learning_rate*(pos_grad - neg_grad) # Update to the weight matrix W, will be the positive gradient minus the negative gradient, times some learning rate
+                self.a += learning_rate*(v - v_prime) # Update to the visible bias
+                self.b += learning_rate*(h - h_prime) # Update to the hidden bias
+            
             if validation_data is not None:
                 # Adjust learning rate based on learning rate decay
                 learning_rate *= self._learning_rate_decay(epoch)
@@ -60,12 +74,13 @@ class RBM:
     def _sigmoid(self, x):
         return 1.0 / (1.0 + np.exp(-x))
 
-    def reconstruct(self, visible):
-        hidden_prob = self._sigmoid(np.dot(visible, self.weights) + self.hidden_bias)
-        hidden = (np.random.rand(*hidden_prob.shape) < hidden_prob).astype(int)
-        visible_prob = self._sigmoid(np.dot(hidden, self.weights.T) + self.visible_bias)
-        return (np.random.rand(*visible_prob.shape) < visible_prob).astype(int)
-
+    def reconstruct(self, visible, iters=10):
+        v = visible.copy()
+        for _ in range(iters):
+            h = self.sample_hidden_layer(v)
+            v = self.sample_visible_layer(h)
+        return v
+    
     def _reconstruction_error(self, data):
         reconstructed_data = self.reconstruct(data)
         return np.mean(np.square(data - reconstructed_data))
@@ -79,8 +94,19 @@ class RBM:
         return samples
 
     def add_noise(self, exemplar, noise_factor=0.2):
-        noise = np.random.uniform(-noise_factor, noise_factor, size=exemplar.shape)
-        noisy_exemplar = np.clip(exemplar + noise, -1, 1)
+        noisy_exemplar = exemplar.copy()
+        for i in range(len(noisy_exemplar)):
+            proba = np.random.random()
+            if proba > noise_factor:
+                continue
+            noisy_exemplar[i] = 0 if noisy_exemplar[i] == 1 else 1
+
+        ## Removing label from exemplar
+        # noisy_exemplar = noisy_exemplar.reshape(10, 12)
+        # noisy_exemplar[:, -2:] = 0
+        
+        # noise = np.random.uniform(-noise_factor, noise_factor, size=exemplar.shape)
+        # noisy_exemplar = np.clip(exemplar + noise, -1, 1)
         return noisy_exemplar
 
     def plot_digit(self, digit_array):
@@ -102,73 +128,101 @@ class RBM:
         return decay_rate ** epoch
 
 num_classes = 8  # Given there are 8 classes (0 to 7)
-num_samples_options = [120, 240, 480, 960]
-test_size_options = [0.1, 0.2, 0.3, 0.4]
-num_hidden_options = [5, 10, 15, 20]
+num_samples_options = [240, 480, 960] # Double the number of samples
+test_size_options = [0.1, 0.2]
+num_hidden_options = [10, 20, 40, 80]
 noise_factor_options = [0.3, 0.5, 0.7, 0.9]
-learning_rate_options = [0.001, 0.003, 0.005, 0.007]
+learning_rate_options = [0.003, 0.005]
 epochs_options = [50, 100, 150, 200]
-gibbs_cycle_list = [1, 5, 10, 20, 50, 100]
+gibbs_cycle_list = [1, 5, 10, 15, 20, 25]
 
 best_params = None
 best_accuracy = -1
 
-with open('grid_search/trial_01.txt', 'w') as output_file:
-    for num_samples, test_size, num_hidden, noise_factor, learning_rate, epochs in product(num_samples_options, 
-                                                                                           test_size_options, 
-                                                                                           num_hidden_options, 
-                                                                                           noise_factor_options, 
-                                                                                           learning_rate_options, 
-                                                                                           epochs_options):
+if __name__ == '__main__':
+    start_time = time.time()  # Get the start time
 
-        print(f"Training with parameters: num_samples={num_samples}, test_size={test_size}, num_hidden={num_hidden}, noise_factor={noise_factor}, learning_rate={learning_rate}, epochs={epochs}", file=output_file)
+    with open('grid_search/trial_01.txt', 'w') as output_file:
+        for num_samples, test_size, num_hidden, noise_factor, learning_rate, epochs in product(num_samples_options, 
+                                                                                               test_size_options, 
+                                                                                               num_hidden_options, 
+                                                                                               noise_factor_options, 
+                                                                                               learning_rate_options, 
+                                                                                               epochs_options):
+            print(f"Training with parameters:\n"
+                  f" - num_samples: {num_samples}\n"
+                  f" - test_size: {test_size}\n"
+                  f" - num_hidden: {num_hidden}\n"
+                  f" - noise_factor: {noise_factor}\n"
+                  f" - learning_rate: {learning_rate}\n"
+                  f" - epochs: {epochs}\n", file=output_file)
 
-        # Instantiate the RBM network
-        rbm = RBM(num_visible=100, num_hidden=num_hidden)
+            # Instantiate the RBM network
+            rbm = RBM(num_visible=100, num_hidden=num_hidden)
 
-        # Generate noisy samples to train on
-        samples = rbm.generate_samples(exemplars, num_samples=num_samples, noise_factor=noise_factor)
+            # Generate noisy samples to train on
+            samples = rbm.generate_samples(exemplars, num_samples=num_samples, noise_factor=noise_factor)
 
-        # Normalize the generated noisy samples
-        exemplars_normalized = [sample * 0.5 + 0.5 for sample in samples]
+            # Normalize the generated noisy samples
+            exemplars_normalized = [sample * 0.5 + 0.5 for sample in samples]
 
-        # Generate labels based on the index of the exemplars
-        num_exemplars_per_class = len(exemplars_normalized) // num_classes
-        labels = np.repeat(np.arange(num_classes), num_exemplars_per_class)
+            # Generate labels based on the index of the exemplars
+            num_exemplars_per_class = len(exemplars_normalized) // num_classes
+            labels = np.repeat(np.arange(num_classes), num_exemplars_per_class)
 
-        # Combine exemplars with their labels
-        exemplars_with_labels = list(zip(exemplars_normalized, labels))
+            # Combine exemplars with their labels
+            exemplars_with_labels = list(zip(exemplars_normalized, labels))
 
-        # Split data into training and testing sets using the custom function
-        train_data, (test_exemplars, test_labels) = rbm.split_data(exemplars_with_labels, 
-                                                                   test_size=test_size, 
-                                                                   random_seed=42, 
-                                                                   original_exemplars=exemplars)
+            # Split data into training and testing sets using the custom function
+            train_data, (test_exemplars, test_labels) = rbm.split_data(exemplars_with_labels, 
+                                                                       test_size=test_size, 
+                                                                       random_seed=42, 
+                                                                       original_exemplars=exemplars)
 
-        # Separate digit arrays and labels in the testing set
-        test_data = test_exemplars, test_labels
+            # Separate digit arrays and labels in the testing set
+            test_data = test_exemplars, test_labels
 
-        # Test the performance of the RBM with the current set of parameters
-        correct_reconstructions = train_and_evaluate_gibbs_cycles(gibbs_cycle_list, 
-                                                                  test_data, 
-                                                                  noise_factor, 
-                                                                  epochs, 
-                                                                  learning_rate)
-        current_accuracy = max(correct_reconstructions)
+            # Test the performance of the RBM with the current set of parameters
+            correct_reconstructions = train_and_evaluate_gibbs_cycles(rbm,
+                                                                      num_samples,
+                                                                      test_size,
+                                                                      num_hidden,  
+                                                                      train_data,
+                                                                      test_data,
+                                                                      test_exemplars,
+                                                                      labels,
+                                                                      test_labels, 
+                                                                      noise_factor, 
+                                                                      epochs,
+                                                                      gibbs_cycle_list, 
+                                                                      learning_rate,
+                                                                      output_file)
+            current_accuracy = max(correct_reconstructions)
 
-        print(f"Current accuracy: {current_accuracy}", file=output_file)
+            print(f"Current accuracy: {current_accuracy}\n", file=output_file)
 
-        # Update the best parameters if the current accuracy is higher than the previous best
-        if current_accuracy > best_accuracy:
-            best_accuracy = current_accuracy
-            best_params = {
-                'num_samples': num_samples,
-                'test_size': test_size,
-                'num_hidden': num_hidden,
-                'noise_factor': noise_factor,
-                'learning_rate': learning_rate,
-                'epochs': epochs
-            }
+            # Update the best parameters if the current accuracy is higher than the previous best
+            if current_accuracy > best_accuracy:
+                best_accuracy = current_accuracy
+                best_params = {
+                    'num_samples': num_samples,
+                    'test_size': test_size,
+                    'num_hidden': num_hidden,
+                    'noise_factor': noise_factor,
+                    'learning_rate': learning_rate,
+                    'epochs': epochs
+                }
 
-print("Best parameters:", best_params)
-print("Best accuracy:", best_accuracy)
+    end_time = time.time()  # Get the end time
+    time_taken = end_time - start_time  # Calculate the time taken for the grid search
+
+    print("Best parameters:\n"
+          f" - num_samples: {best_params['num_samples']}\n"
+          f" - test_size: {best_params['test_size']}\n"
+          f" - num_hidden: {best_params['num_hidden']}\n"
+          f" - noise_factor: {best_params['noise_factor']}\n"
+          f" - learning_rate: {best_params['learning_rate']}\n"
+          f" - epochs: {best_params['epochs']}\n")
+    print("Best accuracy:", best_accuracy)
+    
+    print(f"Grid search took {time_taken:.2f} seconds")

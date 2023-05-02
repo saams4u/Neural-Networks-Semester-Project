@@ -1,10 +1,25 @@
 
-# Import for plotting
+# Import helper functions
+import os
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-def plot_for_two_labels(gibbs_cycles, labels, test_exemplars, noisy_test_exemplars, reconstructed_test_exemplars):
-    # Change indices below to a discrete sequence pair (i.e., 0 & 1, 2 & 3, etc.)
+def plot_for_two_labels(rbm, 
+                        num_samples,
+                        test_size,
+                        num_hidden,
+                        noise_factor,
+                        learning_rate,
+                        epochs,
+                        gibbs_cycles, 
+                        labels, 
+                        test_exemplars, 
+                        test_labels,
+                        noisy_test_exemplars, 
+                        reconstructed_test_exemplars): 
+
+    # Change indices to a discrete sequence pair (i.e., 0 and 1, 2 and 3, etc.)
     index_1 = 0
     index_2 = 1
     unique_labels = np.unique(labels)[index_1:index_2+1]
@@ -27,16 +42,29 @@ def plot_for_two_labels(gibbs_cycles, labels, test_exemplars, noisy_test_exempla
     plt.tight_layout()
 
     ## Save the plot as a PNG file with the accompanying metadata
-    # metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_learning_rate-{learning_rate}_epochs-{epochs}"
-    # filename = f"exemplars_gibbs_cycles-{gibbs_cycles}{metadata}.png"
-    # save_directory = "rbm_plots/noise_factor_0.5/6_and_7"
-    # if not os.path.exists(save_directory):
-    #     os.makedirs(save_directory)
-    # plt.savefig(os.path.join(save_directory, filename), dpi=300)
+    metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_noise_factor-{noise_factor}_learning_rate-{learning_rate}_epochs-{epochs}"
+    filename = f"exemplars_gibbs_cycles-{gibbs_cycles}{metadata}.png"
+    save_directory = f"rbm_plots/{index_1}_and_{index_2}"
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
+    plt.savefig(os.path.join(save_directory, filename), dpi=300)
 
-    plt.show()
+    # plt.show()
 
-def plot_for_all_labels(gibbs_cycles, labels, test_exemplars, noisy_test_exemplars, reconstructed_test_exemplars):
+def plot_for_all_labels(rbm, 
+                        num_samples,
+                        test_size,
+                        num_hidden,
+                        noise_factor,
+                        learning_rate,
+                        epochs,
+                        gibbs_cycles, 
+                        labels, 
+                        test_exemplars, 
+                        test_labels,
+                        noisy_test_exemplars, 
+                        reconstructed_test_exemplars): 
+    
     unique_labels = np.unique(labels)  # Include all unique labels (0 to 7)
     num_labels = len(unique_labels)
 
@@ -59,16 +87,16 @@ def plot_for_all_labels(gibbs_cycles, labels, test_exemplars, noisy_test_exempla
     plt.tight_layout()
 
     ## Save the plot as a PNG file with the accompanying metadata
-    # metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_learning_rate-{learning_rate}_epochs-{epochs}"
-    # filename = f"exemplars_gibbs_cycles-{gibbs_cycles}{metadata}.png"
-    # save_directory = "rbm_plots/noise_factor_0.5/all_numerals"
-    # if not os.path.exists(save_directory):
-    #     os.makedirs(save_directory)
-    # plt.savefig(os.path.join(save_directory, filename), dpi=300)
+    metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_noise_factor-{noise_factor}_learning_rate-{learning_rate}_epochs-{epochs}"
+    filename = f"exemplars_gibbs_cycles-{gibbs_cycles}{metadata}.png"
+    save_directory = "rbm_plots/all_numerals"
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
+    plt.savefig(os.path.join(save_directory, filename), dpi=300)
 
     plt.show()
 
-def plot_rbm_performance(gibbs_cycles, correct_reconstructions):
+def plot_rbm_performance(gibbs_cycles, correct_reconstructions, index_1, index_2, output_file=None):
     # Plot relationship between number of Gibbs cycles and frequency of correct reconstructions
     plt.plot(gibbs_cycles, correct_reconstructions, marker='o')
     plt.xlabel('Number of Gibbs sampling cycles')
@@ -77,10 +105,13 @@ def plot_rbm_performance(gibbs_cycles, correct_reconstructions):
     plt.grid()
 
     ## Save the plot as a PNG file
-    # filename = "rbm_performance.png"
-    # save_directory = "rbm_plots/noise_factor_0.5/all_numerals"
-    # if not os.path.exists(save_directory):
-    #     os.makedirs(save_directory)
+    filename = "rbm_performance.png"
+    save_directory = f"rbm_plots/{index_1}_and_{index_2}"
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
     # plt.savefig(os.path.join(save_directory, filename), dpi=300)
 
-    plt.show()
+    if output_file:
+        plt.savefig(os.path.join(save_directory, filename), dpi=300)
+    else:
+        plt.show()
