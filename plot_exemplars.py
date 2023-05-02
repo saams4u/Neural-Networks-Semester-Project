@@ -17,7 +17,8 @@ def plot_for_two_labels(rbm,
                         test_exemplars, 
                         test_labels,
                         noisy_test_exemplars, 
-                        reconstructed_test_exemplars): 
+                        reconstructed_test_exemplars,
+                        output_file=None): 
 
     # Change indices to a discrete sequence pair (i.e., 0 and 1, 2 and 3, etc.)
     index_1 = 0
@@ -47,9 +48,11 @@ def plot_for_two_labels(rbm,
     save_directory = f"rbm_plots/{index_1}_and_{index_2}"
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
-    plt.savefig(os.path.join(save_directory, filename), dpi=300)
 
-    # plt.show()
+    if output_file:
+        plt.savefig(os.path.join(save_directory, filename), dpi=300)
+    else:
+        plt.show()
 
 def plot_for_all_labels(rbm, 
                         num_samples,
@@ -94,8 +97,11 @@ def plot_for_all_labels(rbm,
         os.makedirs(save_directory)
     plt.savefig(os.path.join(save_directory, filename), dpi=300)
 
-    plt.show()
-
+    if output_file:
+        plt.savefig(os.path.join(save_directory, filename), dpi=300)
+    else:
+        plt.show()
+        
 def plot_rbm_performance(gibbs_cycles, correct_reconstructions, index_1, index_2, output_file=None):
     # Plot relationship between number of Gibbs cycles and frequency of correct reconstructions
     plt.plot(gibbs_cycles, correct_reconstructions, marker='o')
@@ -109,7 +115,6 @@ def plot_rbm_performance(gibbs_cycles, correct_reconstructions, index_1, index_2
     save_directory = f"rbm_plots/{index_1}_and_{index_2}"
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
-    # plt.savefig(os.path.join(save_directory, filename), dpi=300)
 
     if output_file:
         plt.savefig(os.path.join(save_directory, filename), dpi=300)
