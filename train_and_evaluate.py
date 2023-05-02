@@ -9,6 +9,7 @@ from plot_exemplars import plot_for_two_labels, plot_for_all_labels, plot_rbm_pe
 
 
 def train_and_evaluate_gibbs_cycles(rbm,
+                                    iters,
                                     num_samples,
                                     test_size,
                                     num_hidden,                                                                      
@@ -28,13 +29,13 @@ def train_and_evaluate_gibbs_cycles(rbm,
         print(f"Training with {gibbs_cycles} Gibbs cycles...")
         # Train the exemplars with their respective labels
         train_exemplars = [exemplar for exemplar, _ in train_data]
-        rbm.train(train_exemplars, epochs=epochs, learning_rate=learning_rate, gibbs_steps=gibbs_cycles, validation_data=test_data)
+        rbm.train(train_exemplars, epochs=epochs, learning_rate=learning_rate, gibbs_steps=gibbs_cycles, validation_data=None)
         
         # Create noisy versions of the test exemplars
         noisy_test_exemplars = [rbm.add_noise(exemplar, noise_factor=noise_factor) for exemplar in test_exemplars]
 
         # Reconstruct the noisy test exemplars using the RBM
-        reconstructed_test_exemplars = [rbm.reconstruct(noisy_exemplar) for noisy_exemplar in noisy_test_exemplars]
+        reconstructed_test_exemplars = [rbm.reconstruct(noisy_exemplar, iters) for noisy_exemplar in noisy_test_exemplars]
 
         # Determine the correct reconstructions
         correct_reconstructions_count = 0
@@ -61,23 +62,7 @@ def train_and_evaluate_gibbs_cycles(rbm,
         '''
         
         ## Call function to plot original, noisy, and reconstructed exemplars for two labels at a time 
-        plot_for_two_labels(rbm,
-                            num_samples,
-                            test_size,
-                            num_hidden,
-                            noise_factor,
-                            learning_rate,
-                            epochs,
-                            gibbs_cycles, 
-                            labels,
-                            test_exemplars, 
-                            test_labels,
-                            noisy_test_exemplars, 
-                            reconstructed_test_exemplars,
-                            output_file)
-
-        ## Call function to plot original, noisy, and reconstructed exemplars for all labels
-        # plot_for_all_labels(rbm,
+        # plot_for_two_labels(rbm,
         #                     num_samples,
         #                     test_size,
         #                     num_hidden,
@@ -85,12 +70,28 @@ def train_and_evaluate_gibbs_cycles(rbm,
         #                     learning_rate,
         #                     epochs,
         #                     gibbs_cycles, 
-        #                     labels, 
+        #                     labels,
         #                     test_exemplars, 
         #                     test_labels,
         #                     noisy_test_exemplars, 
         #                     reconstructed_test_exemplars,
-        #                     output_file) 
+        #                     output_file)
+
+        ## Call function to plot original, noisy, and reconstructed exemplars for all labels
+        plot_for_all_labels(rbm,
+                            num_samples,
+                            test_size,
+                            num_hidden,
+                            noise_factor,
+                            learning_rate,
+                            epochs,
+                            gibbs_cycles, 
+                            labels, 
+                            test_exemplars, 
+                            test_labels,
+                            noisy_test_exemplars, 
+                            reconstructed_test_exemplars)
+                            # output_file) 
 
     # Call function to plot RBM performance with respect to Gibbs sampling cycles
     plot_rbm_performance(gibbs_cycle_list, correct_reconstructions, index_1=0, index_2=1, output_file=output_file)

@@ -70,7 +70,7 @@ def plot_for_all_labels(rbm,
     
     unique_labels = np.unique(labels)  # Include all unique labels (0 to 7)
     num_labels = len(unique_labels)
-
+    plt.figure(1, figsize=(15, 15))
     for i, label in enumerate(unique_labels):
         label_indices = [index for index, lbl in enumerate(test_labels) if lbl == label]
         index = label_indices[0]
@@ -87,7 +87,7 @@ def plot_for_all_labels(rbm,
         rbm.plot_digit(reconstructed_test_exemplars[index])
         plt.title(f"Reconstructed {label}")
 
-    plt.tight_layout()
+    # plt.tight_layout()
 
     ## Save the plot as a PNG file with the accompanying metadata
     metadata = f"_num_samples-{num_samples}_test_size-{test_size}_num_hidden-{num_hidden}_noise_factor-{noise_factor}_learning_rate-{learning_rate}_epochs-{epochs}"
@@ -97,10 +97,10 @@ def plot_for_all_labels(rbm,
         os.makedirs(save_directory)
     plt.savefig(os.path.join(save_directory, filename), dpi=300)
 
-    if output_file:
-        plt.savefig(os.path.join(save_directory, filename), dpi=300)
-    else:
-        plt.show()
+    # if output_file:
+    #     plt.savefig(os.path.join(save_directory, filename), dpi=300)
+    # else:
+    plt.show()
         
 def plot_rbm_performance(gibbs_cycles, correct_reconstructions, index_1, index_2, output_file=None):
     # Plot relationship between number of Gibbs cycles and frequency of correct reconstructions
