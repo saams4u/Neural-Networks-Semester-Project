@@ -91,7 +91,7 @@ def train_and_evaluate_gibbs_cycles(rbm,
                             test_labels,
                             noisy_test_exemplars, 
                             reconstructed_test_exemplars,
-                            output_file=None) 
+                            output_file=None)
 
     # Call function to plot RBM performance with respect to Gibbs sampling cycles
     plot_rbm_performance(gibbs_cycle_list, correct_reconstructions, index_1=0, index_2=1, output_file=output_file)
