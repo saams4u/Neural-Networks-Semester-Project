@@ -133,8 +133,8 @@ test_size_options = [0.1, 0.2]
 num_hidden_options = [10, 20, 40, 80]
 noise_factor_options = [0.3, 0.5, 0.7, 0.9]
 learning_rate_options = [0.003, 0.005]
-epochs_options = [50, 100, 150, 200]
-gibbs_cycle_list = [1, 5, 10, 15, 20, 25]
+epochs_options = [20, 30, 40, 50]
+gibbs_cycle_list = [1, 10, 20, 50, 100]
 
 best_params = None
 best_accuracy = -1
