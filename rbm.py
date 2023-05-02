@@ -41,7 +41,7 @@ class RBM:
         random_vars = np.random.uniform(size=self.num_hidden) # Set to this for testing purposes - np.array([0.87, 0.14, 0.64]) 
         return (hidden_probas > random_vars).astype(int)
 
-    def train(self, data, learning_rate=0.01, epochs=20, gibbs_steps=None, validation_data=None):
+    def train(self, data, learning_rate=0.01, epochs=20, gibbs_steps=1, validation_data=None):
         for epoch in range(epochs):
             for v in data:
                 # Take training sample, and compute probabilties of hidden units and the
@@ -74,44 +74,15 @@ class RBM:
     def _sigmoid(self, x):
         return 1.0 / (1.0 + np.exp(-x))
 
-    def reconstruct(self, visible, iters=10):
-        v = visible.copy()
-        for _ in range(iters):
-            h = self.sample_hidden_layer(v)
-            v = self.sample_visible_layer(h)
-        return v
-    
-    def _reconstruction_error(self, data, iters=10):
-        reconstructed_data = self.reconstruct(data, iters=iters)
-        return np.mean(np.square(data - reconstructed_data))
-
-    def generate_samples(self, exemplars, num_samples=50, noise_factor=0.2):
-        samples = []
-        for exemplar in exemplars:
-            for _ in range(num_samples):
-                noisy_exemplar = self.add_noise(exemplar, noise_factor)
-                samples.append(noisy_exemplar)
-        return samples
-
-    def add_noise(self, exemplar, noise_factor=0.2):
-        noisy_exemplar = exemplar.copy()
-        for i in range(len(noisy_exemplar)):
-            proba = np.random.random()
-            if proba > noise_factor:
-                continue
-            noisy_exemplar[i] = 0 if noisy_exemplar[i] == 1 else 1
-
-        ## Removing label from exemplar
-        # noisy_exemplar = noisy_exemplar.reshape(10, 12)
-        # noisy_exemplar[:, -2:] = 0
-        
-        # noise = np.random.uniform(-noise_factor, noise_factor, size=exemplar.shape)
-        # noisy_exemplar = np.clip(exemplar + noise, -1, 1)
-        return noisy_exemplar
-
-    def plot_digit(self, digit_array):
-        plt.imshow(digit_array.reshape(10, 10))
-        plt.axis("off")
+    def reconstruct(self, inputs, iters=10):
+        results = []
+        for input in inputs:
+            v = input.copy()
+            for _ in range(iters):
+                h = self.sample_hidden_layer(v)
+                v = self.sample_visible_layer(h)
+            results += [v]
+        return results
 
     def split_data(self, data, test_size=None, random_seed=None, original_exemplars=None):
         if random_seed is not None:
@@ -137,7 +108,8 @@ num_hidden_options    = [20, 40, 60, 80, 100, 120]
 noise_factor_options  = [0.2, 0.3, 0.5, 0.7, 0.9]
 learning_rate_options = [0.005, 0.01]
 epochs_options        = [100, 200, 300]
-gibbs_cycle_list      = [1, 2, 3]
+# gibbs_cycle_list      = [1, 2, 3]
+gibbs_cycle_list      = [1]
 num_reconstructions   = [1, 5, 10]
 
 best_params = None
@@ -147,15 +119,16 @@ if __name__ == '__main__':
     start_time = time.time()  # Get the start time
 
     # with open('grid_search/trial_01.txt', 'w') as output_file:
-    for test_size, num_hidden, noise_factor, learning_rate, epochs, iters in product(test_size_options, 
+    for test_size, num_hidden, noise_factor, learning_rate, epochs, iters in product(
+                                                                              test_size_options, 
                                                                               num_hidden_options, 
                                                                               noise_factor_options, 
                                                                               learning_rate_options, 
                                                                               epochs_options,
                                                                               num_reconstructions):
         print(f"Training with parameters: \n",
-                f" - reconstruction_iters: {iters}\n",
-                f" - num_samples: {num_samples}\n"
+                f"- reconstruction_iters: {iters}\n",
+                f"- num_samples: {num_samples}\n"
                 f" - test_size: {test_size}\n"
                 f" - num_hidden: {num_hidden}\n"
                 f" - noise_factor: {noise_factor}\n"
