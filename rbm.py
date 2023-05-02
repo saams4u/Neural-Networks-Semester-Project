@@ -127,14 +127,15 @@ class RBM:
     def _learning_rate_decay(self, epoch, decay_rate=0.9):
         return decay_rate ** epoch
 
-num_classes = 8  # Given there are 8 classes (0 to 7)
-num_samples_options = [240, 480, 960] # Double the number of samples
-test_size_options = [0.1, 0.2]
-num_hidden_options = [20, 40, 60, 89]
-noise_factor_options = [0.3, 0.5, 0.7, 0.9]
-learning_rate_options = [0.003, 0.005]
-epochs_options = [30, 40, 50]
-gibbs_cycle_list = [1, 10, 20, 50, 100]
+num_classes           = 8
+num_samples           = 50
+test_size_options     = [0.1, 0.2]
+num_hidden_options    = [20, 40, 60, 80, 100, 120]
+noise_factor_options  = [0.2, 0.3, 0.5, 0.7, 0.9]
+learning_rate_options = [0.005, 0.01]
+epochs_options        = [100, 200, 300]
+gibbs_cycle_list      = [1, 2, 3]
+num_reconstructions   = [1, 5, 10]
 
 best_params = None
 best_accuracy = -1
@@ -142,76 +143,78 @@ best_accuracy = -1
 if __name__ == '__main__':
     start_time = time.time()  # Get the start time
 
-    with open('grid_search/trial_01.txt', 'w') as output_file:
-        for num_samples, test_size, num_hidden, noise_factor, learning_rate, epochs in product(num_samples_options, 
-                                                                                               test_size_options, 
-                                                                                               num_hidden_options, 
-                                                                                               noise_factor_options, 
-                                                                                               learning_rate_options, 
-                                                                                               epochs_options):
-            print(f"Training with parameters:\n"
-                  f" - num_samples: {num_samples}\n"
-                  f" - test_size: {test_size}\n"
-                  f" - num_hidden: {num_hidden}\n"
-                  f" - noise_factor: {noise_factor}\n"
-                  f" - learning_rate: {learning_rate}\n"
-                  f" - epochs: {epochs}\n", file=output_file)
+    # with open('grid_search/trial_01.txt', 'w') as output_file:
+    for test_size, num_hidden, noise_factor, learning_rate, epochs, iters in product(test_size_options, 
+                                                                              num_hidden_options, 
+                                                                              noise_factor_options, 
+                                                                              learning_rate_options, 
+                                                                              epochs_options,
+                                                                              num_reconstructions):
+        print(f"Training with parameters: \n",
+                f" - reconstruction_iters: {iters}\n",
+                f" - num_samples: {num_samples}\n"
+                f" - test_size: {test_size}\n"
+                f" - num_hidden: {num_hidden}\n"
+                f" - noise_factor: {noise_factor}\n"
+                f" - learning_rate: {learning_rate}\n"
+                f" - epochs: {epochs}\n")
 
-            # Instantiate the RBM network
-            rbm = RBM(num_visible=100, num_hidden=num_hidden)
+        # Instantiate the RBM network
+        rbm = RBM(num_visible=100, num_hidden=num_hidden)
 
-            # Generate noisy samples to train on
-            samples = rbm.generate_samples(exemplars, num_samples=num_samples, noise_factor=noise_factor)
+        # Generate noisy samples to train on
+        samples = rbm.generate_samples(exemplars, num_samples=num_samples, noise_factor=noise_factor)
 
-            # Normalize the generated noisy samples
-            exemplars_normalized = [sample * 0.5 + 0.5 for sample in samples]
+        # Normalize the generated noisy samples
+        # exemplars_normalized = [sample * 0.5 + 0.5 for sample in samples]
 
-            # Generate labels based on the index of the exemplars
-            num_exemplars_per_class = len(exemplars_normalized) // num_classes
-            labels = np.repeat(np.arange(num_classes), num_exemplars_per_class)
+        # Generate labels based on the index of the exemplars
+        num_exemplars_per_class = len(samples) // num_classes
+        labels = np.repeat(np.arange(num_classes), num_exemplars_per_class)
 
-            # Combine exemplars with their labels
-            exemplars_with_labels = list(zip(exemplars_normalized, labels))
+        # Combine exemplars with their labels
+        exemplars_with_labels = list(zip(samples, labels))
 
-            # Split data into training and testing sets using the custom function
-            train_data, (test_exemplars, test_labels) = rbm.split_data(exemplars_with_labels, 
-                                                                       test_size=test_size, 
-                                                                       random_seed=42, 
-                                                                       original_exemplars=exemplars)
+        # Split data into training and testing sets using the custom function
+        train_data, (test_exemplars, test_labels) = rbm.split_data(exemplars_with_labels, 
+                                                                test_size=test_size, 
+                                                                random_seed=42, 
+                                                                original_exemplars=exemplars)
 
-            # Separate digit arrays and labels in the testing set
-            test_data = test_exemplars, test_labels
+        # Separate digit arrays and labels in the testing set
+        test_data = test_exemplars, test_labels
 
-            # Test the performance of the RBM with the current set of parameters
-            correct_reconstructions = train_and_evaluate_gibbs_cycles(rbm,
-                                                                      num_samples,
-                                                                      test_size,
-                                                                      num_hidden,  
-                                                                      train_data,
-                                                                      test_data,
-                                                                      test_exemplars,
-                                                                      labels,
-                                                                      test_labels, 
-                                                                      noise_factor, 
-                                                                      epochs,
-                                                                      gibbs_cycle_list, 
-                                                                      learning_rate,
-                                                                      output_file)
-            current_accuracy = max(correct_reconstructions)
+        # Test the performance of the RBM with the current set of parameters
+        correct_reconstructions = train_and_evaluate_gibbs_cycles(rbm,
+                                                                iters,
+                                                                num_samples,
+                                                                test_size,
+                                                                num_hidden,  
+                                                                train_data,
+                                                                test_data,
+                                                                test_exemplars,
+                                                                labels,
+                                                                test_labels, 
+                                                                noise_factor, 
+                                                                epochs,
+                                                                gibbs_cycle_list, 
+                                                                learning_rate,
+                                                                None)
+        current_accuracy = max(correct_reconstructions)
 
-            print(f"Current accuracy: {current_accuracy}\n", file=output_file)
+        print(f"Current accuracy: {current_accuracy}\n")
 
-            # Update the best parameters if the current accuracy is higher than the previous best
-            if current_accuracy > best_accuracy:
-                best_accuracy = current_accuracy
-                best_params = {
-                    'num_samples': num_samples,
-                    'test_size': test_size,
-                    'num_hidden': num_hidden,
-                    'noise_factor': noise_factor,
-                    'learning_rate': learning_rate,
-                    'epochs': epochs
-                }
+        # Update the best parameters if the current accuracy is higher than the previous best
+        if current_accuracy > best_accuracy:
+            best_accuracy = current_accuracy
+            best_params = {
+                'num_samples': num_samples,
+                'test_size': test_size,
+                'num_hidden': num_hidden,
+                'noise_factor': noise_factor,
+                'learning_rate': learning_rate,
+                'epochs': epochs
+            }
 
     end_time = time.time()  # Get the end time
     time_taken = end_time - start_time  # Calculate the time taken for the grid search
