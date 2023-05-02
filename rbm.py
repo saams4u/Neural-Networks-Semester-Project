@@ -130,10 +130,10 @@ class RBM:
 num_classes = 8  # Given there are 8 classes (0 to 7)
 num_samples_options = [240, 480, 960] # Double the number of samples
 test_size_options = [0.1, 0.2]
-num_hidden_options = [10, 20, 40, 80]
+num_hidden_options = [20, 40, 80]
 noise_factor_options = [0.3, 0.5, 0.7, 0.9]
 learning_rate_options = [0.003, 0.005]
-epochs_options = [20, 30, 40, 50]
+epochs_options = [30, 40, 50]
 gibbs_cycle_list = [1, 10, 20, 50, 100]
 
 best_params = None
