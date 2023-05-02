@@ -41,7 +41,7 @@ class RBM:
         random_vars = np.random.uniform(size=self.num_hidden) # Set to this for testing purposes - np.array([0.87, 0.14, 0.64]) 
         return (hidden_probas > random_vars).astype(int)
 
-    def train(self, data, learning_rate=0.01, epochs=20, gibbs_steps=1, validation_data=None):
+    def train(self, data, learning_rate=0.01, epochs=20, gibbs_steps=None, validation_data=None):
         for epoch in range(epochs):
             for v in data:
                 # Take training sample, and compute probabilties of hidden units and the
@@ -81,16 +81,16 @@ class RBM:
             v = self.sample_visible_layer(h)
         return v
     
-    def _reconstruction_error(self, data):
-        reconstructed_data = self.reconstruct(data)
+    def _reconstruction_error(self, data, iters=10):
+        reconstructed_data = self.reconstruct(data, iters=iters)
         return np.mean(np.square(data - reconstructed_data))
 
     def generate_samples(self, exemplars, num_samples=50, noise_factor=0.2):
         samples = []
         for exemplar in exemplars:
             for _ in range(num_samples):
-                noiseless_exemplar = self.add_noise(exemplar, noise_factor)
-                samples.append(noiseless_exemplar)
+                noisy_exemplar = self.add_noise(exemplar, noise_factor)
+                samples.append(noisy_exemplar)
         return samples
 
     def add_noise(self, exemplar, noise_factor=0.2):
@@ -130,7 +130,7 @@ class RBM:
 num_classes = 8  # Given there are 8 classes (0 to 7)
 num_samples_options = [240, 480, 960] # Double the number of samples
 test_size_options = [0.1, 0.2]
-num_hidden_options = [20, 40, 80]
+num_hidden_options = [20, 40, 60, 89]
 noise_factor_options = [0.3, 0.5, 0.7, 0.9]
 learning_rate_options = [0.003, 0.005]
 epochs_options = [30, 40, 50]
