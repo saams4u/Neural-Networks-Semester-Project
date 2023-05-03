@@ -118,7 +118,7 @@ class RBM:
 
 num_classes           = 8
 num_samples           = 240
-test_size_options     = 0.1
+test_size_options     = [0.1]
 num_hidden_options    = [80, 100, 120]
 noise_factor_options  = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 learning_rate_options = [0.005, 0.01]
