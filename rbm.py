@@ -118,13 +118,13 @@ class RBM:
 
 num_classes           = 8
 num_samples           = 240
-num_hidden_options    = [120, 180, 240]
-test_size_options     = [0.1, 0.2]
+test_size_options     = 0.1
+num_hidden_options    = [80, 100, 120]
 noise_factor_options  = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 learning_rate_options = [0.005, 0.01]
-epochs_options        = [200, 300, 400, 500]
-gibbs_cycle_list      = [1, 2, 3, 4, 5, 6]
-num_reconstructions   = [2, 4, 6, 8, 10]
+epochs_options        = [50, 100, 150]
+gibbs_cycle_list      = [1, 2, 3]
+num_reconstructions   = [1, 2]
 
 best_params = None
 best_accuracy = -1
