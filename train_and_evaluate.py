@@ -4,31 +4,35 @@ import time
 import numpy as np
 
 # Import plot functions
-from plot_exemplars import plot_for_two_labels, plot_for_all_labels, plot_rbm_performance
+from plot import plot_exemplars, plot_performance
+
+# Import data from exemplars
+from data import exemplars
 
 
 def mean_squared_error(y_true, y_pred):
     return np.mean((y_true - y_pred)**2)
 
-def train_and_evaluate_gibbs_cycles(rbm,
-                                    iters,
-                                    num_samples,
-                                    test_size,
-                                    num_hidden,                                                                      
-                                    train_data, 
-                                    test_data, 
-                                    test_exemplars, 
-                                    labels,
-                                    test_labels,
-                                    noise_factor, 
-                                    epochs, 
-                                    gibbs_cycle_list, 
-                                    learning_rate,
-                                    output_file=None):
+def train_and_evaluate(rbm,
+                    iters,
+                    num_samples,
+                    test_size,
+                    num_hidden,                                                                      
+                    train_data, 
+                    test_data, 
+                    test_exemplars, 
+                    labels,
+                    test_labels,
+                    noise_factor, 
+                    epochs, 
+                    gibbs_cycle_list, 
+                    learning_rate,
+                    output_file):
     
     correct_reconstructions = []
     for gibbs_cycles in gibbs_cycle_list:
         print(f"Training with {gibbs_cycles} Gibbs cycles...")
+
         # Train the exemplars with their respective labels
         train_exemplars = [exemplar for exemplar, _ in train_data]
         rbm.train(train_exemplars, epochs=epochs, learning_rate=learning_rate, gibbs_steps=gibbs_cycles, validation_data=None)
@@ -42,7 +46,7 @@ def train_and_evaluate_gibbs_cycles(rbm,
         # Determine the correct reconstructions
         correct_reconstructions_count = 0
         for _, (reconstructed_exemplar, true_label) in enumerate(zip(reconstructed_test_exemplars, test_labels)):
-            # Calculate the Euclidean distance between the reconstructed exemplar and all exemplars
+            # Calculate the MSE between the reconstructed exemplar and all exemplars
             mse_values = [mean_squared_error((reconstructed_exemplar > 0.5).astype(int), (exemplar > 0.5).astype(int)) for exemplar, _ in train_data]
 
             # Find the index of the most similar exemplar (smallest MSE)
@@ -63,39 +67,29 @@ def train_and_evaluate_gibbs_cycles(rbm,
               (in sequence) OR all the exemplars
         '''
         
-        ## Call function to plot original, noisy, and reconstructed exemplars for two labels at a time 
-        # plot_for_two_labels(rbm,
-        #                     num_samples,
-        #                     test_size,
-        #                     num_hidden,
-        #                     noise_factor,
-        #                     learning_rate,
-        #                     epochs,
-        #                     gibbs_cycles, 
-        #                     labels,
-        #                     test_exemplars, 
-        #                     test_labels,
-        #                     noisy_test_exemplars, 
-        #                     reconstructed_test_exemplars,
-        #                     output_file)
-
         ## Call function to plot original, noisy, and reconstructed exemplars for all labels
-        plot_for_all_labels(rbm,
-                            num_samples,
-                            test_size,
-                            num_hidden,
-                            noise_factor,
-                            learning_rate,
-                            epochs,
-                            gibbs_cycles, 
-                            labels, 
-                            test_exemplars, 
-                            test_labels,
-                            noisy_test_exemplars, 
-                            reconstructed_test_exemplars,
-                            output_file=None)
+        plot_exemplars(rbm,
+                    num_samples,
+                    test_size,
+                    num_hidden,
+                    noise_factor,
+                    learning_rate,
+                    epochs,
+                    gibbs_cycles, 
+                    labels, 
+                    test_exemplars, 
+                    test_labels,
+                    noisy_test_exemplars, 
+                    reconstructed_test_exemplars,
+                    output_file)
 
     # Call function to plot RBM performance with respect to Gibbs sampling cycles
-    plot_rbm_performance(gibbs_cycle_list, correct_reconstructions, index_1=0, index_2=1, output_file=output_file)
+    plot_performance(gibbs_cycle_list, 
+                     correct_reconstructions, 
+                     epochs, 
+                     noise_factor, 
+                     learning_rate, 
+                     test_size, 
+                     output_file)
 
     return correct_reconstructions

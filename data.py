@@ -1,6 +1,8 @@
 
-# Import for numerical computing
+# Import helper functions
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 # Define the exemplars as 10x10 arrays
 exemplars = [
@@ -116,3 +118,27 @@ exemplars = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ]).flatten()
 ]
+
+def plot_digit(digit_array):
+    plt.imshow(digit_array.reshape(10, 10))
+    plt.axis("off")
+
+def add_noise(exemplar, noise_factor=None, seed=None):
+    np.random.seed(seed)
+    noisy_exemplar = exemplar.copy()
+    for i in range(len(noisy_exemplar)):
+        proba = np.random.random()
+        if proba > noise_factor:
+            continue
+        noisy_exemplar[i] = 0 if noisy_exemplar[i] == 1 else 1
+    return noisy_exemplar
+
+def generate_samples(exemplars, num_samples=None, noise_factor=None):
+    samples = dict()
+    for i in range(len(exemplars)):
+        exemplar = exemplars[i]
+        samples[i] = list()
+        for _ in range(num_samples):
+            noisy_exemplar = add_noise(exemplar, noise_factor)
+            samples[i].append(noisy_exemplar)
+    return samples
