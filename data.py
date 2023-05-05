@@ -1,5 +1,5 @@
 
-# Import for numerical computing
+# Import helper functions
 import numpy as np
 import matplotlib.pyplot as plt
 
