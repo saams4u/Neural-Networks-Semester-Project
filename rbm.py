@@ -8,6 +8,13 @@ import matplotlib.pyplot as plt
 class RBM:
 
     def __init__(self, num_visible, num_hidden):
+        '''
+        Initialize 2 Layer Restricted Boltzmann Machine with a specified number of hidden nodes and visible nodes.
+
+        Arguments:
+          n_visible (int) - Number of nodes in the visible layer
+          n_hidden  (int) - Number of nodes in the hidden layer
+        '''
         self.num_visible = num_visible
         self.num_hidden = num_hidden
         self.W = np.random.normal(0.0, 0.1, (num_visible, num_hidden))
@@ -33,6 +40,9 @@ class RBM:
         return (hidden_probas > random_vars).astype(int)
 
     def train(self, data, learning_rate=0.01, epochs=20, gibbs_steps=1, validation_data=None):
+        '''
+        Train the Restricted Boltzmann Machine utilizing Hinton's Approximation Method.
+        '''
         for epoch in range(epochs):
             for v in data:
                 # Take training sample, and compute probabilties of hidden units and the
@@ -57,12 +67,17 @@ class RBM:
                 self.W += learning_rate*(pos_grad - neg_grad) # Update to the weight matrix W, will be the positive gradient minus the negative gradient, times some learning rate
                 self.a += learning_rate*(v - v_prime) # Update to the visible bias
                 self.b += learning_rate*(h - h_prime) # Update to the hidden bias
+
+            # training_error = []
             
-            if validation_data is not None:
-                # Adjust learning rate based on learning rate decay
-                learning_rate *= self._learning_rate_decay(epoch)
+            # if validation_data is not None:
+            #     # Adjust learning rate based on learning rate decay
+            #     learning_rate *= self._learning_rate_decay(epoch)
 
     def _sigmoid(self, x):
+        '''
+        Activation function for output of nodes in either layer.
+        '''
         return 1.0 / (1.0 + np.exp(-x))
 
     def reconstruct(self, inputs, iters=10):

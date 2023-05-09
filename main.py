@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from itertools import product
 
 # Import exemplar data
-from data import exemplars
+from utils import exemplars
 
 # Import RBM class
 from rbm import RBM

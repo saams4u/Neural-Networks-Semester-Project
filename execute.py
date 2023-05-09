@@ -7,11 +7,8 @@ import numpy as np
 from plot import plot_exemplars, plot_performance
 
 # Import data from exemplars
-from data import exemplars
+from utils import exemplars
 
-
-def mean_squared_error(y_true, y_pred):
-    return np.mean((y_true - y_pred)**2)
 
 def train_and_evaluate(rbm,
                     iters,
