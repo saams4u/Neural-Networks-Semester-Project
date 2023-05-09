@@ -1,12 +1,9 @@
 
 # Import helper functions
 import numpy as np
-import matplotlib.pyplot as plt
-
 
 # Implement the Restricted Boltzmann Machine class
 class RBM:
-
     def __init__(self, num_visible, num_hidden):
         '''
         Initialize 2 Layer Restricted Boltzmann Machine with a specified number of hidden nodes and visible nodes.
@@ -21,9 +18,15 @@ class RBM:
         self.a = np.zeros(num_visible)
         self.b = np.zeros(num_hidden)
 
+    def sigmoid(self, x):
+        '''
+        Activation function for output of nodes in either layer.
+        '''
+        return 1.0 / (1.0 + np.exp(-x))
+
     def sample_visible_layer(self, h):
         # Calculate visible probabilities
-        activation = np.vectorize(self._sigmoid)
+        activation = np.vectorize(self.sigmoid)
         visible_probas = activation(np.dot(h, self.W.T) + self.a)
 
         # Sample visible layer output from calculated probabilties
@@ -32,7 +35,7 @@ class RBM:
 
     def sample_hidden_layer(self, v):
         # Calculate hidden probabilities
-        activation = np.vectorize(self._sigmoid)
+        activation = np.vectorize(self.sigmoid)
         hidden_probas = activation(np.dot(v, self.W) + self.b)
 
         # Sample hidden layer output from calculated probabilties
@@ -68,18 +71,6 @@ class RBM:
                 self.a += learning_rate*(v - v_prime) # Update to the visible bias
                 self.b += learning_rate*(h - h_prime) # Update to the hidden bias
 
-            # training_error = []
-            
-            # if validation_data is not None:
-            #     # Adjust learning rate based on learning rate decay
-            #     learning_rate *= self._learning_rate_decay(epoch)
-
-    def _sigmoid(self, x):
-        '''
-        Activation function for output of nodes in either layer.
-        '''
-        return 1.0 / (1.0 + np.exp(-x))
-
     def reconstruct(self, inputs, iters=10):
         results = []
         for input in inputs:
@@ -89,17 +80,3 @@ class RBM:
                 v = self.sample_visible_layer(h)
             results += [v]
         return results
-
-    def split_data(self, data, test_size=None, random_seed=None, original_exemplars=None):
-        if random_seed is not None:
-            np.random.seed(random_seed)
-        np.random.shuffle(data)
-        split_index = int(len(data) * (1 - test_size))
-        train_data = data[:split_index]
-        test_data = data[split_index:]
-        test_exemplars = [original_exemplars[idx] for _, idx in test_data]
-        test_labels = [lbl for _, lbl in test_data]
-        return train_data, (test_exemplars, test_labels)
-
-    def _learning_rate_decay(self, epoch, decay_rate=0.9):
-        return decay_rate ** epoch
